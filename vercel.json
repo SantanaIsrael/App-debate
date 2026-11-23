@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "server.js": {
-      "includeFiles": "{tailwind.js,viet.webp,index.html,public/**}"
+      "includeFiles": "{tailwind.js,qrcode.min.js,viet.webp,index.html,public/**}"
     }
   }
 }

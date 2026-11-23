@@ -249,6 +249,11 @@ app.get('/tailwind.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'tailwind.js'));
 });
 
+app.get('/qrcode.min.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'qrcode.min.js'));
+});
+
 app.get('/viet.webp', (req, res) => {
   res.setHeader('Content-Type', 'image/webp');
   res.sendFile(path.join(__dirname, 'viet.webp'));

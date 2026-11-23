@@ -21,6 +21,7 @@
             document.head.appendChild(s);
         }
     </script>
+    <script src="/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -68,7 +69,7 @@
                 <button onclick="toggleDarkMode()" id="btn-dark-mode" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Alternar Modo Noturno">
                     🌙 Escuro
                 </button>
-                <div id="admin-mode-switcher" class="hidden w-full sm:w-auto grid grid-cols-3 sm:flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
+                <div id="admin-mode-switcher" style="display: none;" class="hidden w-full sm:w-auto items-center gap-1 bg-slate-800 p-1 rounded-xl">
                     <button onclick="setAppMode('student')" id="mode-btn-student" class="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-sm font-bold transition bg-indigo-600 text-white text-center">
                         📱 Aluno
                     </button>
@@ -283,15 +284,23 @@
             <!-- Direita: Debatedores Sorteados + Cronômetro + Placar ao Vivo (5 colunas) -->
             <div class="lg:col-span-5 flex flex-col gap-5">
                 
-                <!-- Cronômetro Gigante -->
-                <div class="bg-slate-900 text-white rounded-3xl p-4 sm:p-6 shadow-lg border border-slate-800 flex items-center justify-between gap-3">
+                <!-- Cronômetro Gigante + QR Code de Entrada -->
+                <div class="bg-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-lg border border-slate-800 flex items-center justify-between gap-3">
                     <div>
                         <span class="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-slate-400">Tempo de Fala</span>
                         <div id="pres-timer-display" class="text-3xl sm:text-4xl xl:text-5xl font-black font-mono text-white mt-1">01:30</div>
                     </div>
-                    <div class="text-right">
-                        <span class="text-[11px] sm:text-xs text-indigo-300 font-semibold block">Acesse no celular:</span>
-                        <span class="text-xs sm:text-sm font-bold bg-white/10 px-3 py-1 rounded-lg inline-block mt-1">📱 Modo Aluno</span>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <span class="text-[11px] text-indigo-300 font-bold block">📱 Entrar na Sessão</span>
+                            <span class="text-[10px] text-slate-400 block max-w-[140px] truncate" id="pres-qr-url-label">Escaneie o QR Code</span>
+                            <button onclick="openQrZoomModal()" class="mt-1.5 text-[11px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg transition">
+                                🔍 Ampliar QR
+                            </button>
+                        </div>
+                        <button onclick="openQrZoomModal()" class="bg-white p-1.5 rounded-xl shadow-md hover:scale-105 transition shrink-0" title="Clique para ampliar o QR Code no telão">
+                            <div id="pres-qr-box" class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center"></div>
+                        </button>
                     </div>
                 </div>
 
@@ -610,6 +619,31 @@
         </div>
     </div>
 
+    <!-- Modal: QR Code Ampliado no Telão -->
+    <div id="qr-zoom-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">📱 Entrar na Sessão — ModeraNet</h3>
+                <button onclick="closeQrZoomModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold text-lg px-2">✕</button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-300">
+                Aponte a câmera do celular para o QR Code abaixo para entrar direto no <strong>Modo Aluno</strong>:
+            </p>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 inline-flex items-center justify-center mx-auto shadow-inner">
+                <div id="qr-zoom-box" class="w-56 h-56 flex items-center justify-center"></div>
+            </div>
+            <div class="space-y-1.5 text-left">
+                <label for="qr-custom-url-input" class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Link da sessão (se estiver em localhost, troque pelo IP do notebook na rede):
+                </label>
+                <div class="flex gap-2">
+                    <input type="text" id="qr-custom-url-input" oninput="updateQrFromInput(this.value)" class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono">
+                    <button onclick="closeQrZoomModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Motor de Sincronização em Tempo Real (Docker Local / WebSocket e Vercel HTTP) -->
     <script>
 
@@ -888,11 +922,13 @@
             }
             const switcher = document.getElementById('admin-mode-switcher');
             if (isPresenterAuthorized) {
+                switcher.style.display = '';
                 switcher.classList.remove('hidden');
-                switcher.classList.add('flex');
+                switcher.classList.add('grid', 'grid-cols-3', 'sm:flex');
             } else {
+                switcher.style.display = 'none';
                 switcher.classList.add('hidden');
-                switcher.classList.remove('flex');
+                switcher.classList.remove('grid', 'grid-cols-3', 'sm:flex', 'flex');
             }
         }
 
@@ -1867,7 +1903,68 @@
             document.getElementById('pres-pct-cens').textContent = counts.total === 0 ? '0%' : `${pctCens}%`;
             document.getElementById('pres-bar-legit').style.width = `${pctLegit}%`;
             document.getElementById('pres-bar-cens').style.width = `${pctCens}%`;
+
+            renderPresentationQRCode();
         }
+
+        // =========================================================================
+        // QR CODE NO TELÃO (100% OFFLINE E COMPATÍVEL COM VERCEL)
+        // =========================================================================
+        let customQrSessionUrl = '';
+
+        function getStudentSessionUrl() {
+            if (customQrSessionUrl) return customQrSessionUrl;
+            return window.location.origin + window.location.pathname;
+        }
+
+        function renderQRInto(elementId, urlText, cellSize) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (typeof qrcode === 'undefined') {
+                el.innerHTML = '<span class="text-[10px] text-slate-500">QR indisponível</span>';
+                return;
+            }
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(urlText);
+                qr.make();
+                el.innerHTML = qr.createSvgTag({ cellSize: cellSize || 3, margin: 1 });
+                const svg = el.querySelector('svg');
+                if (svg) {
+                    svg.setAttribute('style', 'width: 100%; height: 100%; display: block;');
+                }
+            } catch (e) {
+                console.warn('[QR] Erro ao gerar QR Code:', e);
+            }
+        }
+
+        function renderPresentationQRCode() {
+            const url = getStudentSessionUrl();
+            const label = document.getElementById('pres-qr-url-label');
+            if (label) {
+                label.textContent = url.replace(/^https?:\/\//, '');
+            }
+            renderQRInto('pres-qr-box', url, 3);
+        }
+
+        window.openQrZoomModal = function() {
+            const url = getStudentSessionUrl();
+            const input = document.getElementById('qr-custom-url-input');
+            if (input) input.value = url;
+            renderQRInto('qr-zoom-box', url, 6);
+            document.getElementById('qr-zoom-modal').classList.remove('hidden');
+        };
+
+        window.closeQrZoomModal = function() {
+            document.getElementById('qr-zoom-modal').classList.add('hidden');
+        };
+
+        window.updateQrFromInput = function(val) {
+            customQrSessionUrl = val.trim();
+            const url = getStudentSessionUrl();
+            renderQRInto('qr-zoom-box', url, 6);
+            renderPresentationQRCode();
+        };
 
         function renderOrchestratorView() {
             document.getElementById('orch-round-grid').innerHTML = ROUNDS_DATA.map((r, idx) => {
