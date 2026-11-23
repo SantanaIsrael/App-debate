@@ -57,6 +57,7 @@ function getDefaultState() {
     isModeratedView: true,
     votingOpen: true,
     votingOpenByRound: [true, true, true, true, true, true],
+    showFinalResults: false,
     students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
     attendance: {},
     typingByTeam: { mod: {}, user: {} },

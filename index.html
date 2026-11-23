@@ -366,6 +366,9 @@
                 <button onclick="drawRoundSpeakers()" class="flex-1 sm:flex-initial justify-center bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🎙️ Sortear Porta-Vozes da Rodada
                 </button>
+                <button onclick="toggleFinalResults()" id="orch-btn-final-results" class="flex-1 sm:flex-initial justify-center bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-3.5 py-2.5 rounded-xl shadow transition">
+                    🏆 Anunciar Vencedores p/ Turma
+                </button>
                 <button onclick="resetDebateSession()" class="flex-1 sm:flex-initial justify-center bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🔄 Zerar Sessão
                 </button>
@@ -541,6 +544,68 @@
                     </thead>
                     <tbody id="attendance-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Anúncio Final dos Vencedores para a Turma e Telão -->
+    <div id="final-results-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-2xl space-y-5 my-6 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <span class="text-[11px] font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400">🏁 Encerramento Oficial do Debate</span>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">🏆 Resultado Final & Pódio da Turma</h2>
+                </div>
+                <button id="final-results-close-btn" onclick="closeFinalResultsLocal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold text-lg px-2 py-1 rounded-lg">✕</button>
+            </div>
+
+            <!-- Banner do Lado Vencedor -->
+            <div id="final-winner-banner" class="rounded-2xl p-4 sm:p-5 border text-center space-y-2">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <!-- Comparativo de Votos Totais e Pontos das Bancadas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70 rounded-2xl p-4 space-y-1.5">
+                    <span class="text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase block">🛡️ Bancada Moderadores (Proteção)</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-black text-blue-900 dark:text-blue-100" id="final-mod-votes">0 votos</span>
+                        <span class="text-xs font-extrabold text-blue-700 dark:text-blue-300" id="final-mod-rounds">0/6 rodadas</span>
+                    </div>
+                    <p class="text-xs font-bold text-blue-700/90 dark:text-blue-300/90" id="final-mod-points">⭐ 0 pontos de argumentação</p>
+                </div>
+
+                <div class="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/70 rounded-2xl p-4 space-y-1.5">
+                    <span class="text-xs font-extrabold text-purple-800 dark:text-purple-300 uppercase block">👤 Bancada Usuários (Contra Censura)</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-black text-purple-900 dark:text-purple-100" id="final-user-votes">0 votos</span>
+                        <span class="text-xs font-extrabold text-purple-700 dark:text-purple-300" id="final-user-rounds">0/6 rodadas</span>
+                    </div>
+                    <p class="text-xs font-bold text-purple-700/90 dark:text-purple-300/90" id="final-user-points">⭐ 0 pontos de argumentação</p>
+                </div>
+            </div>
+
+            <!-- Mensagem Personalizada caso o Aluno esteja no Pódio -->
+            <div id="final-personal-badge" class="hidden rounded-2xl p-3.5 bg-gradient-to-r from-amber-500/20 to-emerald-500/20 border border-amber-400/50 text-center text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-200">
+            </div>
+
+            <!-- Pódio Top 3 Maiores Pontuadores -->
+            <div class="space-y-3">
+                <h3 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300 text-center">
+                    🌟 Top 3 Maiores Pontuadores do Debate
+                </h3>
+                <div id="final-top3-list" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button id="final-orch-toggle-btn" onclick="toggleFinalResults()" class="hidden bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                    🔙 Encerrar Anúncio na Turma
+                </button>
+                <button onclick="closeFinalResultsLocal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition">
+                    Fechar nesta tela
+                </button>
             </div>
         </div>
     </div>
@@ -782,6 +847,7 @@
             isModeratedView: true,
             votingOpen: true,
             votingOpenByRound: [true, true, true, true, true, true],
+            showFinalResults: false,
             students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
             attendance: {},
             typingByTeam: { mod: {}, user: {} },
@@ -809,6 +875,7 @@
         let openCommentsSet = new Set([0]); // Mantém comentários do post atual abertos por padrão
         let timerSeconds = 90;
         let timerInterval = null;
+        let dismissedFinalModalForSession = false;
 
         // =========================================================================
         // CONTROLE DE ACESSO (ALUNOS SÓ VEEM A TELA DE ALUNO)
@@ -925,6 +992,7 @@
                 votingOpenByRound: Array.isArray(remoteData.votingOpenByRound)
                     ? remoteData.votingOpenByRound
                     : (state.votingOpenByRound || [true, true, true, true, true, true]),
+                showFinalResults: Boolean(remoteData.showFinalResults),
                 attendance: remoteData.attendance || {},
                 typingByTeam: remoteData.typingByTeam || { mod: {}, user: {} },
                 votesByRound: remoteData.votesByRound || [{}, {}, {}, {}, {}, {}],
@@ -1239,6 +1307,7 @@
                 isModeratedView: true,
                 votingOpen: true,
                 votingOpenByRound: [true, true, true, true, true, true],
+                showFinalResults: false,
                 students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
                 attendance: {},
                 typingByTeam: { mod: {}, user: {} },
@@ -1464,6 +1533,7 @@
             renderStudentView();
             renderPresentationView();
             renderOrchestratorView();
+            renderFinalResultsModal();
         }
 
         function populateStudentDropdown() {
@@ -1833,6 +1903,13 @@
                 btnVoting.textContent = "🔓 Reabrir Urna";
             }
 
+            const btnFinal = document.getElementById('orch-btn-final-results');
+            if (btnFinal) {
+                btnFinal.textContent = state.showFinalResults
+                    ? '🔙 Ocultar Anúncio Final'
+                    : '🏆 Anunciar Vencedores p/ Turma';
+            }
+
             renderOrchestratorStudentsList();
             renderOrchestratorChats();
 
@@ -1980,6 +2057,183 @@
                 const tUser = formatTypingIndicator('user', null);
                 userTypingEl.textContent = tUser ? `✍️ ${tUser}` : '';
                 userTypingEl.classList.toggle('hidden', !tUser);
+            }
+        }
+
+        // =========================================================================
+        // APURAÇÃO FINAL: TOP 3 MAIORES PONTUADORES E LADO VENCEDOR
+        // =========================================================================
+        window.toggleFinalResults = function() {
+            const nextVal = !state.showFinalResults;
+            state.showFinalResults = nextVal;
+            if (nextVal) {
+                dismissedFinalModalForSession = false;
+                state.votingOpen = false;
+                state.votingOpenByRound = [false, false, false, false, false, false];
+            }
+            pushStateToCloud();
+        };
+
+        window.closeFinalResultsLocal = function() {
+            dismissedFinalModalForSession = true;
+            document.getElementById('final-results-modal').classList.add('hidden');
+        };
+
+        function computeFinalResults() {
+            let totalLegitVotes = 0;
+            let totalCensVotes = 0;
+            let roundsLegit = 0;
+            let roundsCens = 0;
+
+            ROUNDS_DATA.forEach((_, idx) => {
+                const c = getRoundVoteCounts(idx);
+                totalLegitVotes += c.legit;
+                totalCensVotes += c.censorship;
+                if (c.total > 0) {
+                    if (c.legit > c.censorship) roundsLegit++;
+                    else if (c.censorship > c.legit) roundsCens++;
+                }
+            });
+
+            let modTeamPoints = 0;
+            let userTeamPoints = 0;
+            state.students.forEach(s => {
+                const pts = s.points || 0;
+                if (s.team === 'mod') modTeamPoints += pts;
+                else userTeamPoints += pts;
+            });
+
+            // Ordena alunos para Top 3 (Pontos -> Votos -> Ordem)
+            const rankedStudents = [...state.students]
+                .map(s => {
+                    const stats = getStudentParticipationStats(s.id);
+                    return { ...s, pts: s.points || 0, votesCount: stats.votes };
+                })
+                .sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts;
+                    if (b.votesCount !== a.votesCount) return b.votesCount - a.votesCount;
+                    return a.name.localeCompare(b.name);
+                });
+
+            const top3 = rankedStudents.slice(0, 3);
+
+            // Determina lado vencedor (pelos votos totais nas urnas; em empate, pelos pontos das bancadas)
+            let winnerSide = 'draw';
+            if (totalLegitVotes > totalCensVotes) winnerSide = 'mod';
+            else if (totalCensVotes > totalLegitVotes) winnerSide = 'user';
+            else if (modTeamPoints > userTeamPoints) winnerSide = 'mod';
+            else if (userTeamPoints > modTeamPoints) winnerSide = 'user';
+
+            return {
+                totalLegitVotes,
+                totalCensVotes,
+                roundsLegit,
+                roundsCens,
+                modTeamPoints,
+                userTeamPoints,
+                top3,
+                winnerSide
+            };
+        }
+
+        function renderFinalResultsModal() {
+            const modal = document.getElementById('final-results-modal');
+            if (!modal) return;
+
+            if (!state.showFinalResults) {
+                dismissedFinalModalForSession = false;
+                modal.classList.add('hidden');
+                return;
+            }
+
+            if (dismissedFinalModalForSession) return;
+
+            modal.classList.remove('hidden');
+
+            const res = computeFinalResults();
+            const banner = document.getElementById('final-winner-banner');
+
+            if (res.winnerSide === 'mod') {
+                banner.className = "rounded-2xl p-4 sm:p-5 border border-blue-300 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-950/60 dark:to-emerald-950/40 text-center space-y-1.5";
+                banner.innerHTML = `
+                    <div class="text-3xl sm:text-4xl">🛡️🏆</div>
+                    <h3 class="text-base sm:text-xl font-black text-blue-950 dark:text-blue-100">VITÓRIA DA BANCADA MODERADORES!</h3>
+                    <p class="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200">
+                        A maioria da turma entendeu que a moderação foi <strong>Proteção Legítima</strong> dos menores (${res.totalLegitVotes} votos contra ${res.totalCensVotes}).
+                    </p>
+                `;
+            } else if (res.winnerSide === 'user') {
+                banner.className = "rounded-2xl p-4 sm:p-5 border border-purple-300 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-rose-50 dark:from-purple-950/60 dark:to-rose-950/40 text-center space-y-1.5";
+                banner.innerHTML = `
+                    <div class="text-3xl sm:text-4xl">👤🏆</div>
+                    <h3 class="text-base sm:text-xl font-black text-purple-950 dark:text-purple-100">VITÓRIA DA BANCADA USUÁRIOS!</h3>
+                    <p class="text-xs sm:text-sm font-medium text-purple-800 dark:text-purple-200">
+                        A maioria da turma alertou para o risco de <strong>Censura Indevida</strong> nas redes (${res.totalCensVotes} votos contra ${res.totalLegitVotes}).
+                    </p>
+                `;
+            } else {
+                banner.className = "rounded-2xl p-4 sm:p-5 border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-center space-y-1.5";
+                banner.innerHTML = `
+                    <div class="text-3xl sm:text-4xl">⚖️🤝</div>
+                    <h3 class="text-base sm:text-xl font-black text-amber-950 dark:text-amber-100">EMPATE TÉCNICO NO DEBATE!</h3>
+                    <p class="text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-200">
+                        A turma ficou perfeitamente dividida entre Proteção Legítima e Risco de Censura (${res.totalLegitVotes} x ${res.totalCensVotes}).
+                    </p>
+                `;
+            }
+
+            document.getElementById('final-mod-votes').textContent = `${res.totalLegitVotes} votos`;
+            document.getElementById('final-mod-rounds').textContent = `${res.roundsLegit}/6 rodadas vencidas`;
+            document.getElementById('final-mod-points').textContent = `⭐ ${res.modTeamPoints} pontos de argumentação`;
+
+            document.getElementById('final-user-votes').textContent = `${res.totalCensVotes} votos`;
+            document.getElementById('final-user-rounds').textContent = `${res.roundsCens}/6 rodadas vencidas`;
+            document.getElementById('final-user-points').textContent = `⭐ ${res.userTeamPoints} pontos de argumentação`;
+
+            const personalEl = document.getElementById('final-personal-badge');
+            const myRankIdx = myStudentId ? res.top3.findIndex(s => s.id === myStudentId) : -1;
+            if (myRankIdx !== -1) {
+                const medals = ['🥇 1º Lugar', '🥈 2º Lugar', '🥉 3º Lugar'];
+                personalEl.textContent = `🎉 Parabéns! Você ficou em ${medals[myRankIdx]} no ranking geral de pontos da turma!`;
+                personalEl.classList.remove('hidden');
+            } else {
+                personalEl.classList.add('hidden');
+            }
+
+            const medalsConfig = [
+                { medal: '🥇', label: '1º Lugar • Campeão', cardClass: 'border-amber-400 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 ring-2 ring-amber-400/30' },
+                { medal: '🥈', label: '2º Lugar', cardClass: 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/70' },
+                { medal: '🥉', label: '3º Lugar', cardClass: 'border-orange-300 dark:border-orange-800 bg-orange-50/70 dark:bg-orange-950/20' }
+            ];
+
+            document.getElementById('final-top3-list').innerHTML = res.top3.map((st, idx) => {
+                const cfg = medalsConfig[idx];
+                const isMe = st.id === myStudentId;
+                return `
+                    <div class="rounded-2xl p-4 border ${cfg.cardClass} flex flex-col items-center text-center space-y-1.5">
+                        <span class="text-2xl sm:text-3xl">${cfg.medal}</span>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">${cfg.label}</span>
+                        <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                            ${st.name} ${isMe ? '(Você)' : ''}
+                        </h4>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            st.team === 'mod'
+                                ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
+                                : 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300'
+                        }">
+                            ${st.team === 'mod' ? '🛡️ Moderador' : '👤 Usuário'}
+                        </span>
+                        <div class="text-base font-black text-amber-600 dark:text-amber-400 pt-1">
+                            ⭐ ${st.pts} ${st.pts === 1 ? 'Ponto' : 'Pontos'}
+                        </div>
+                        <span class="text-[10px] text-slate-400">${st.votesCount}/6 votos registrados</span>
+                    </div>
+                `;
+            }).join('');
+
+            const orchToggleBtn = document.getElementById('final-orch-toggle-btn');
+            if (orchToggleBtn) {
+                orchToggleBtn.classList.toggle('hidden', !isPresenterAuthorized);
             }
         }
 
