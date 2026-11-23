@@ -102,23 +102,47 @@
     <!-- ===================================================================== -->
     <main id="view-student" class="flex-1 max-w-lg w-full mx-auto px-3 py-4 space-y-4">
         
-        <!-- Card de Identificação do Aluno -->
+        <!-- Card de Identificação / Perfil do Aluno -->
         <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
-            <div class="flex items-center justify-between gap-2 mb-2">
-                <label for="student-identity-select" class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    👤 Quem é você na turma?
-                </label>
-                <span id="student-points-badge" class="hidden text-xs font-extrabold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2.5 py-0.5 rounded-full">
-                    ⭐ 0 Pontos
-                </span>
+            <!-- Seletor (visível apenas antes do aluno escolher o nome) -->
+            <div id="student-selector-box">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <label for="student-identity-select" class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        👤 Quem é você na turma?
+                    </label>
+                </div>
+                <select id="student-identity-select" onchange="selectStudentIdentity(this.value)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- Selecione seu nome na lista --</option>
+                </select>
+                <p class="text-[11px] text-slate-400 mt-2">Após selecionar, seu perfil ficará fixo nesta sessão e sua presença será registrada.</p>
             </div>
-            <select id="student-identity-select" onchange="selectStudentIdentity(this.value)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">-- Selecione seu nome na lista --</option>
-            </select>
 
-            <!-- Papel Sorteado do Aluno -->
-            <div id="student-role-banner" class="hidden mt-3 rounded-xl p-3 border text-xs">
-                <!-- Preenchido via JS -->
+            <!-- Perfil Fixo do Usuário (visível após selecionar o nome) -->
+            <div id="student-profile-box" class="hidden space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div id="student-profile-avatar" class="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow">
+                            AL
+                        </div>
+                        <div class="min-w-0">
+                            <h2 id="student-profile-name" class="font-extrabold text-sm text-slate-900 dark:text-white truncate">Aluno</h2>
+                            <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span id="student-profile-handle" class="text-[11px] text-slate-400 truncate">@aluno</span>
+                                <span class="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                                    ✅ Presença Confirmada
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <span id="student-points-badge" class="shrink-0 text-xs font-extrabold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2.5 py-1 rounded-full">
+                        ⭐ 0 Pontos
+                    </span>
+                </div>
+
+                <!-- Papel Sorteado do Aluno -->
+                <div id="student-role-banner" class="rounded-xl p-3 border text-xs">
+                    <!-- Preenchido via JS -->
+                </div>
             </div>
         </div>
 
@@ -184,9 +208,13 @@
                     </button>
                 </div>
 
+                <!-- Indicador de Quem Está Digitando -->
+                <div id="chat-typing-indicator" class="hidden px-3.5 py-1.5 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 italic">
+                </div>
+
                 <!-- Input de Mensagem -->
                 <form onsubmit="handleSendGroupChat(event)" class="p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-                    <input type="text" id="chat-input-text" placeholder="Combine argumentos com sua bancada..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" maxlength="220">
+                    <input type="text" id="chat-input-text" oninput="handleChatTyping(this.value)" placeholder="Combine argumentos com sua bancada..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" maxlength="220">
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
                         Enviar
                     </button>
@@ -329,11 +357,17 @@
                 <button onclick="copyStudentShareLink()" id="btn-copy-student-link" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
                     🔗 Copiar Link Só dos Alunos
                 </button>
+                <button onclick="openAttendanceModal()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    📋 Lista de Presença (<span id="orch-attendance-count">0</span>/23)
+                </button>
                 <button onclick="shuffleAllTeams()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
                     🎲 Sortear Lados da Turma (23 Alunos)
                 </button>
                 <button onclick="drawRoundSpeakers()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
                     🎙️ Sortear Porta-Vozes da Rodada
+                </button>
+                <button onclick="resetDebateSession()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    🔄 Zerar Sessão
                 </button>
             </div>
         </div>
@@ -426,6 +460,7 @@
                                 <span id="orch-chat-mod-count" class="text-[10px] bg-black/25 px-2 py-0.5 rounded-full">0</span>
                             </div>
                             <div id="orch-chat-mod-list" class="flex-1 p-2.5 overflow-y-auto space-y-1.5 text-xs"></div>
+                            <div id="orch-typing-mod" class="hidden px-2.5 py-1 bg-blue-100/80 dark:bg-blue-950/60 text-[10px] font-semibold text-blue-800 dark:text-blue-300 italic border-t border-blue-200/60 dark:border-blue-900/50"></div>
                         </div>
 
                         <!-- Chat Usuários -->
@@ -435,6 +470,7 @@
                                 <span id="orch-chat-user-count" class="text-[10px] bg-black/25 px-2 py-0.5 rounded-full">0</span>
                             </div>
                             <div id="orch-chat-user-list" class="flex-1 p-2.5 overflow-y-auto space-y-1.5 text-xs"></div>
+                            <div id="orch-typing-user" class="hidden px-2.5 py-1 bg-purple-100/80 dark:bg-purple-950/60 text-[10px] font-semibold text-purple-800 dark:text-purple-300 italic border-t border-purple-200/60 dark:border-purple-900/50"></div>
                         </div>
                     </div>
                 </div>
@@ -466,6 +502,48 @@
 
         </div>
     </main>
+
+    <!-- Modal: Lista de Presença para o Professor (Orquestrador) -->
+    <div id="attendance-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div>
+                    <h3 class="font-extrabold text-base text-slate-900 dark:text-white">📋 Lista de Presença e Participação — Debate</h3>
+                    <p id="attendance-summary-text" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">0 presentes de 23 alunos</p>
+                </div>
+                <button onclick="closeAttendanceModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold text-lg px-2">✕</button>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <button onclick="copyAttendanceForProfessor()" id="btn-copy-attendance" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                    📋 Copiar Texto para o Professor
+                </button>
+                <button onclick="downloadAttendanceCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                    📥 Baixar Planilha (CSV / Excel)
+                </button>
+                <button onclick="printAttendancePDF()" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                    🖨️ Imprimir / Salvar PDF
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase sticky top-0">
+                        <tr>
+                            <th class="py-2.5 px-3">#</th>
+                            <th class="py-2.5 px-3">Nome do Aluno</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3">Entrada</th>
+                            <th class="py-2.5 px-3">Bancada</th>
+                            <th class="py-2.5 px-3 text-center">Votos</th>
+                            <th class="py-2.5 px-3 text-center">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Motor de Sincronização em Tempo Real (Docker Local / WebSocket e Vercel HTTP) -->
     <script>
@@ -699,10 +777,13 @@
         // ESTADO GLOBAL SINCRONIZADO
         // =========================================================================
         let state = {
+            sessionId: 1,
             currentRound: 0,
             isModeratedView: true,
             votingOpen: true,
             students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
+            attendance: {},
+            typingByTeam: { mod: {}, user: {} },
             roundSpeakers: {
                 mod: ["Henrique Barreto Pereira", "Gilbert Carmo Macedo"],
                 user: ["Erick Batista dos Santos", "Henrique Cerqueira Fadigas"]
@@ -808,6 +889,27 @@
 
         function applyIncomingState(remoteData) {
             if (!remoteData) return;
+            const prevSessionId = state.sessionId;
+            const incomingSessionId = remoteData.sessionId || state.sessionId;
+
+            // Se o orquestrador zerou a sessão, limpa o perfil salvo no celular
+            if (prevSessionId && incomingSessionId && prevSessionId !== incomingSessionId) {
+                myStudentId = '';
+                try {
+                    localStorage.removeItem('moderanet_student_id');
+                    localStorage.setItem('moderanet_session_id', String(incomingSessionId));
+                } catch (e) {}
+            } else if (myStudentId) {
+                try {
+                    const savedSession = localStorage.getItem('moderanet_session_id');
+                    if (savedSession && String(incomingSessionId) !== savedSession) {
+                        myStudentId = '';
+                        localStorage.removeItem('moderanet_student_id');
+                        localStorage.setItem('moderanet_session_id', String(incomingSessionId));
+                    }
+                } catch (e) {}
+            }
+
             const normalizedStudents = (remoteData.students || INITIAL_STUDENTS).map(s => ({
                 ...s,
                 points: typeof s.points === 'number' ? s.points : (s.candies || 0)
@@ -815,7 +917,10 @@
             state = {
                 ...state,
                 ...remoteData,
+                sessionId: incomingSessionId,
                 students: normalizedStudents,
+                attendance: remoteData.attendance || {},
+                typingByTeam: remoteData.typingByTeam || { mod: {}, user: {} },
                 votesByRound: remoteData.votesByRound || [{}, {}, {}, {}, {}, {}],
                 groupChats: remoteData.groupChats || state.groupChats
             };
@@ -962,10 +1067,34 @@
             renderAllViews();
         };
 
+        function markStudentPresent(studentId) {
+            if (!studentId) return;
+            if (!state.attendance) state.attendance = {};
+            if (!state.attendance[studentId] || !state.attendance[studentId].present) {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                state.attendance[studentId] = { present: true, joinedAt: timeStr };
+            }
+        }
+
+        window.toggleStudentAttendance = function(studentId) {
+            if (!state.attendance) state.attendance = {};
+            const current = state.attendance[studentId];
+            if (current && current.present) {
+                state.attendance[studentId] = { present: false, joinedAt: '' };
+            } else {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                state.attendance[studentId] = { present: true, joinedAt: timeStr };
+            }
+            pushStateToCloud();
+        };
+
         window.givePoints = function(studentId, delta) {
             const st = state.students.find(s => s.id === studentId);
             if (st) {
                 st.points = Math.max(0, (st.points || 0) + delta);
+                if (delta > 0) markStudentPresent(studentId);
                 pushStateToCloud();
             }
         };
@@ -1056,14 +1185,133 @@
             }
         };
 
+        window.resetDebateSession = async function() {
+            if (!confirm('Tem certeza que deseja ZERAR toda a sessão? Isso apagará votos, pontos, chat, presença e fará todos os alunos selecionarem seus nomes novamente.')) {
+                return;
+            }
+
+            const newSessionId = Date.now();
+            state = {
+                sessionId: newSessionId,
+                currentRound: 0,
+                isModeratedView: true,
+                votingOpen: true,
+                students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
+                attendance: {},
+                typingByTeam: { mod: {}, user: {} },
+                roundSpeakers: {
+                    mod: ["Henrique Barreto Pereira", "Gilbert Carmo Macedo"],
+                    user: ["Erick Batista dos Santos", "Henrique Cerqueira Fadigas"]
+                },
+                votesByRound: [{}, {}, {}, {}, {}, {}],
+                groupChats: {
+                    mod: [
+                        { sender: "Sistema", text: "Bem-vindos à Sala Privada dos Moderadores! Usem este espaço para sugerir argumentos aos colegas que vão falar.", time: "Início" }
+                    ],
+                    user: [
+                        { sender: "Sistema", text: "Bem-vindos à Sala Privada dos Usuários! Usem este espaço para combinar argumentos e ajudar seus porta-vozes.", time: "Início" }
+                    ]
+                }
+            };
+
+            myStudentId = '';
+            openCommentsSet = new Set([0]);
+            window.setTimer(90);
+            try {
+                localStorage.removeItem('moderanet_student_id');
+                localStorage.setItem('moderanet_session_id', String(newSessionId));
+            } catch (e) {}
+
+            renderAllViews();
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'sync_state', state }));
+            }
+            if (window.location.protocol !== 'file:') {
+                try {
+                    await fetch('/api/state', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reset: true, state })
+                    });
+                } catch (e) {
+                    console.warn('[Sync] Erro ao zerar sessão via HTTP:', e);
+                }
+            }
+        };
+
         // =========================================================================
         // AÇÕES DO ALUNO NO CELULAR (IDENTIDADE, VOTO NO POST E CHAT DA BANCADA)
         // =========================================================================
+        let lastTypingPush = 0;
+        let localTypingStopTimer = null;
+
         window.selectStudentIdentity = function(studentId) {
             myStudentId = studentId;
-            renderStudentView();
-            renderGroupChat();
+            if (studentId) {
+                markStudentPresent(studentId);
+                try {
+                    localStorage.setItem('moderanet_student_id', studentId);
+                    localStorage.setItem('moderanet_session_id', String(state.sessionId || 1));
+                } catch (e) {}
+                pushStateToCloud();
+            } else {
+                renderStudentView();
+                renderGroupChat();
+            }
         };
+
+        window.handleChatTyping = function(val) {
+            if (!myStudentId) return;
+            const st = state.students.find(s => s.id === myStudentId);
+            if (!st) return;
+            const team = st.team;
+            if (!state.typingByTeam) state.typingByTeam = { mod: {}, user: {} };
+            if (!state.typingByTeam[team]) state.typingByTeam[team] = {};
+
+            const hasText = val && val.trim().length > 0;
+            const now = Date.now();
+
+            if (hasText) {
+                if (now - lastTypingPush > 1500) {
+                    lastTypingPush = now;
+                    state.typingByTeam[team][myStudentId] = now;
+                    pushStateToCloud();
+                }
+                clearTimeout(localTypingStopTimer);
+                localTypingStopTimer = setTimeout(() => {
+                    if (state.typingByTeam && state.typingByTeam[team] && state.typingByTeam[team][myStudentId]) {
+                        delete state.typingByTeam[team][myStudentId];
+                        pushStateToCloud();
+                    }
+                }, 4000);
+            } else {
+                clearTimeout(localTypingStopTimer);
+                if (state.typingByTeam[team][myStudentId]) {
+                    delete state.typingByTeam[team][myStudentId];
+                    lastTypingPush = 0;
+                    pushStateToCloud();
+                }
+            }
+        };
+
+        function formatTypingIndicator(team, excludeId) {
+            const map = (state.typingByTeam && state.typingByTeam[team]) ? state.typingByTeam[team] : {};
+            const now = Date.now();
+            const activeIds = Object.keys(map).filter(id => id !== excludeId && (now - map[id]) < 4500);
+            if (activeIds.length === 0) return '';
+
+            const firstStudent = state.students.find(s => s.id === activeIds[0]);
+            const firstName = firstStudent ? firstStudent.name.split(' ')[0] : 'Alguém';
+
+            if (activeIds.length === 1) {
+                return `${firstName} está digitando...`;
+            } else if (activeIds.length === 2) {
+                return `${firstName} e mais um estão digitando...`;
+            } else {
+                return `${firstName} e mais ${activeIds.length - 1} estão digitando...`;
+            }
+        }
 
         window.togglePostComments = function(roundIdx) {
             if (openCommentsSet.has(roundIdx)) {
@@ -1087,6 +1335,7 @@
             if (roundIdx === state.currentRound && !state.votingOpen) return;
 
             state.votesByRound[roundIdx][myStudentId] = choice;
+            markStudentPresent(myStudentId);
             pushStateToCloud();
         };
 
@@ -1118,6 +1367,14 @@
                 text,
                 time: timeStr
             });
+            // Limpa indicador de digitação e garante presença
+            clearTimeout(localTypingStopTimer);
+            lastTypingPush = 0;
+            if (state.typingByTeam && state.typingByTeam[team]) {
+                delete state.typingByTeam[team][st.id];
+            }
+            markStudentPresent(st.id);
+
             // Mantém últimas 40 mensagens para leveza
             if (state.groupChats[team].length > 40) {
                 state.groupChats[team] = state.groupChats[team].slice(-40);
@@ -1161,26 +1418,37 @@
         function renderStudentView() {
             const st = state.students.find(s => s.id === myStudentId);
 
-            // Papel e Pontos do Aluno Selecionado
+            const selectorBox = document.getElementById('student-selector-box');
+            const profileBox = document.getElementById('student-profile-box');
             const roleBanner = document.getElementById('student-role-banner');
             const pointsBadge = document.getElementById('student-points-badge');
 
             if (st) {
+                // Oculta o seletor para evitar que o aluno veja/troque para outros nomes
+                selectorBox.classList.add('hidden');
+                profileBox.classList.remove('hidden');
+
+                const nameParts = st.name.trim().split(/\s+/);
+                const initials = (nameParts[0][0] + (nameParts[1] ? nameParts[1][0] : '')).toUpperCase();
+                const handle = '@' + nameParts[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') + (nameParts[1] ? '_' + nameParts[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '');
+
+                document.getElementById('student-profile-avatar').textContent = initials;
+                document.getElementById('student-profile-name').textContent = st.name;
+                document.getElementById('student-profile-handle').textContent = handle;
+
                 const pts = st.points || 0;
-                roleBanner.classList.remove('hidden');
-                pointsBadge.classList.remove('hidden');
                 pointsBadge.textContent = `⭐ ${pts} ${pts === 1 ? 'Ponto' : 'Pontos'}`;
 
                 if (st.team === 'mod') {
-                    roleBanner.className = "mt-3 rounded-xl p-3 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-950 dark:text-blue-200 text-xs";
+                    roleBanner.className = "rounded-xl p-3 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-950 dark:text-blue-200 text-xs";
                     roleBanner.innerHTML = `<strong>🛡️ Seu Papel: BANCADA MODERADOR</strong><br>Você defende a plataforma, os termos de uso e a prevenção ágil de riscos. Os comentários de apoio abaixo são exclusivos do seu grupo.`;
                 } else {
-                    roleBanner.className = "mt-3 rounded-xl p-3 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/50 text-purple-950 dark:text-purple-200 text-xs";
+                    roleBanner.className = "rounded-xl p-3 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/50 text-purple-950 dark:text-purple-200 text-xs";
                     roleBanner.innerHTML = `<strong>👤 Seu Papel: BANCADA USUÁRIO</strong><br>Você defende a proteção dos menores sem censura privada arbitrária. Os comentários de apoio abaixo são exclusivos do seu grupo.`;
                 }
             } else {
-                roleBanner.classList.add('hidden');
-                pointsBadge.classList.add('hidden');
+                selectorBox.classList.remove('hidden');
+                profileBox.classList.add('hidden');
             }
 
             document.getElementById('feed-count-badge').textContent = state.currentRound + 1;
@@ -1401,6 +1669,17 @@
                 `;
             }).join('');
             list.scrollTop = list.scrollHeight;
+
+            const typingEl = document.getElementById('chat-typing-indicator');
+            if (typingEl) {
+                const typingText = formatTypingIndicator(st.team, myStudentId);
+                if (typingText) {
+                    typingEl.textContent = `✍️ ${typingText}`;
+                    typingEl.classList.remove('hidden');
+                } else {
+                    typingEl.classList.add('hidden');
+                }
+            }
         }
 
         function renderPresentationView() {
@@ -1521,6 +1800,10 @@
 
         // Renderiza a lista de alunos com campo de busca e sorteados fixados no topo
         window.renderOrchestratorStudentsList = function() {
+            const attendanceCount = state.students.filter(s => state.attendance && state.attendance[s.id]?.present).length;
+            const attBadge = document.getElementById('orch-attendance-count');
+            if (attBadge) attBadge.textContent = attendanceCount;
+
             const searchInput = document.getElementById('orch-student-search');
             const clearBtn = document.getElementById('orch-clear-search-btn');
             const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -1554,6 +1837,7 @@
                 const isMod = st.team === 'mod';
                 const isDrawn = drawnNames.has(st.name);
                 const pts = st.points || 0;
+                const isPresent = Boolean(state.attendance && state.attendance[st.id]?.present);
 
                 return `
                     <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition ${
@@ -1566,7 +1850,14 @@
                                 ${isDrawn ? `<span class="text-[10px] font-extrabold bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded shrink-0">🎙️ SORTEADO</span>` : ''}
                                 <span class="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">${st.name}</span>
                             </div>
-                            <div class="flex items-center gap-1.5 mt-1">
+                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <button onclick="toggleStudentAttendance('${st.id}')" class="text-[10px] font-extrabold px-2 py-0.5 rounded-md transition ${
+                                    isPresent
+                                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                }" title="Clique para alternar presença">
+                                    ${isPresent ? '✅ Presente' : '⚪ Ausente'}
+                                </button>
                                 <button onclick="swapStudentRole('${st.id}')" class="text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
                                     isMod
                                         ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
@@ -1618,7 +1909,189 @@
 
             modList.scrollTop = modList.scrollHeight;
             userList.scrollTop = userList.scrollHeight;
+
+            const modTypingEl = document.getElementById('orch-typing-mod');
+            const userTypingEl = document.getElementById('orch-typing-user');
+            if (modTypingEl) {
+                const tMod = formatTypingIndicator('mod', null);
+                modTypingEl.textContent = tMod ? `✍️ ${tMod}` : '';
+                modTypingEl.classList.toggle('hidden', !tMod);
+            }
+            if (userTypingEl) {
+                const tUser = formatTypingIndicator('user', null);
+                userTypingEl.textContent = tUser ? `✍️ ${tUser}` : '';
+                userTypingEl.classList.toggle('hidden', !tUser);
+            }
         }
+
+        // =========================================================================
+        // LISTA DE PRESENÇA PARA O PROFESSOR (ORQUESTRADOR)
+        // =========================================================================
+        function getStudentParticipationStats(studentId) {
+            let votes = 0;
+            (state.votesByRound || []).forEach(roundVotes => {
+                if (roundVotes && roundVotes[studentId]) votes++;
+            });
+            return { votes };
+        }
+
+        window.openAttendanceModal = function() {
+            renderAttendanceModal();
+            document.getElementById('attendance-modal').classList.remove('hidden');
+        };
+
+        window.closeAttendanceModal = function() {
+            document.getElementById('attendance-modal').classList.add('hidden');
+        };
+
+        function renderAttendanceModal() {
+            const presentList = state.students.filter(s => state.attendance && state.attendance[s.id]?.present);
+            document.getElementById('attendance-summary-text').textContent =
+                `${presentList.length} presentes e ${state.students.length - presentList.length} ausentes (Total: ${state.students.length} alunos)`;
+
+            const tbody = document.getElementById('attendance-table-body');
+            tbody.innerHTML = state.students.map((st, idx) => {
+                const att = state.attendance ? state.attendance[st.id] : null;
+                const isPresent = Boolean(att && att.present);
+                const stats = getStudentParticipationStats(st.id);
+                return `
+                    <tr class="${isPresent ? '' : 'opacity-60'}">
+                        <td class="py-2 px-3 text-slate-400 font-mono">${idx + 1}</td>
+                        <td class="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">${st.name}</td>
+                        <td class="py-2 px-3">
+                            <button onclick="toggleStudentAttendance('${st.id}'); renderAttendanceModal();" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full ${
+                                isPresent
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }">
+                                ${isPresent ? '✅ Presente' : '⚪ Ausente'}
+                            </button>
+                        </td>
+                        <td class="py-2 px-3 text-slate-500 dark:text-slate-400 font-mono">${att?.joinedAt || '-'}</td>
+                        <td class="py-2 px-3">${st.team === 'mod' ? '🛡️ Moderador' : '👤 Usuário'}</td>
+                        <td class="py-2 px-3 text-center font-bold">${stats.votes}/6</td>
+                        <td class="py-2 px-3 text-center font-extrabold text-amber-600 dark:text-amber-400">${st.points || 0}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.copyAttendanceForProfessor = function() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const present = state.students.filter(s => state.attendance && state.attendance[s.id]?.present);
+            const absent = state.students.filter(s => !(state.attendance && state.attendance[s.id]?.present));
+
+            let text = `LISTA DE PRESENCA E PARTICIPACAO - DEBATE MODERANET (${dateStr})\n`;
+            text += `Tema: O aumento da moderacao de conteudo para proteger menores pode abrir caminho para censura indevida nas redes sociais.\n`;
+            text += `Condutores: Yohanan & Israel\n`;
+            text += `Presentes: ${present.length}/${state.students.length}\n\n`;
+            text += `--- ALUNOS PRESENTES ---\n`;
+            present.forEach((s, i) => {
+                const att = state.attendance[s.id];
+                const stats = getStudentParticipationStats(s.id);
+                text += `${i + 1}. ${s.name} | Entrada: ${att?.joinedAt || '-'} | Bancada: ${s.team === 'mod' ? 'Moderador' : 'Usuario'} | Votos: ${stats.votes}/6 | Pontos: ${s.points || 0}\n`;
+            });
+            if (absent.length > 0) {
+                text += `\n--- AUSENTES ---\n`;
+                absent.forEach((s, i) => {
+                    text += `${i + 1}. ${s.name}\n`;
+                });
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('btn-copy-attendance');
+                const orig = btn.textContent;
+                btn.textContent = '✅ Lista Copiada!';
+                setTimeout(() => { btn.textContent = orig; }, 2500);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            });
+        };
+
+        window.downloadAttendanceCSV = function() {
+            const rows = [['#', 'Nome', 'Status', 'Horario Entrada', 'Bancada', 'Votos (de 6)', 'Pontos']];
+            state.students.forEach((s, idx) => {
+                const att = state.attendance ? state.attendance[s.id] : null;
+                const isPresent = Boolean(att && att.present);
+                const stats = getStudentParticipationStats(s.id);
+                rows.push([
+                    idx + 1,
+                    `"${s.name}"`,
+                    isPresent ? 'Presente' : 'Ausente',
+                    att?.joinedAt || '-',
+                    s.team === 'mod' ? 'Moderador' : 'Usuario',
+                    stats.votes,
+                    s.points || 0
+                ]);
+            });
+            const csvContent = '\uFEFF' + rows.map(r => r.join(';')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lista_presenca_debate_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        window.printAttendancePDF = function() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const presentCount = state.students.filter(s => state.attendance && state.attendance[s.id]?.present).length;
+            const win = window.open('', '_blank');
+            if (!win) return;
+            const rowsHtml = state.students.map((s, idx) => {
+                const att = state.attendance ? state.attendance[s.id] : null;
+                const isPresent = Boolean(att && att.present);
+                const stats = getStudentParticipationStats(s.id);
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${s.name}</td>
+                        <td><strong>${isPresent ? 'Presente' : 'Ausente'}</strong></td>
+                        <td>${att?.joinedAt || '-'}</td>
+                        <td>${s.team === 'mod' ? 'Moderador' : 'Usuário'}</td>
+                        <td style="text-align:center">${stats.votes}/6</td>
+                        <td style="text-align:center">${s.points || 0}</td>
+                    </tr>
+                `;
+            }).join('');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Lista de Presença - Debate ModeraNet</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+                        h1 { font-size: 18px; margin-bottom: 4px; }
+                        p { font-size: 12px; color: #444; margin: 2px 0 14px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+                        th { background: #f3f4f6; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Lista de Presença e Participação — Debate ModeraNet</h1>
+                    <p>Data: ${dateStr} | Condutores: Yohanan & Israel | Presentes: ${presentCount}/${state.students.length}</p>
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Nome</th><th>Status</th><th>Entrada</th><th>Bancada</th><th>Votos</th><th>Pontos</th></tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    <script>window.onload = function() { window.print(); };<\/script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        };
 
         // =========================================================================
         // CRONÔMETRO
@@ -1665,6 +2138,13 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const savedId = localStorage.getItem('moderanet_student_id');
+                if (savedId) {
+                    myStudentId = savedId;
+                }
+            } catch (e) {}
+
             checkPresenterAuthorization();
             if (isPresenterAuthorized) {
                 setAppMode('orchestrator');
@@ -1672,6 +2152,32 @@
                 setAppMode('student');
             }
             initRealtimeSync();
+
+            // Atualiza indicadores de digitação a cada 2s para limpar expirados
+            setInterval(() => {
+                if (currentAppMode === 'student' && studentSubTab === 'chat') {
+                    const st = state.students.find(s => s.id === myStudentId);
+                    const typingEl = document.getElementById('chat-typing-indicator');
+                    if (st && typingEl) {
+                        const txt = formatTypingIndicator(st.team, myStudentId);
+                        typingEl.textContent = txt ? `✍️ ${txt}` : '';
+                        typingEl.classList.toggle('hidden', !txt);
+                    }
+                } else if (currentAppMode === 'orchestrator') {
+                    const modTypingEl = document.getElementById('orch-typing-mod');
+                    const userTypingEl = document.getElementById('orch-typing-user');
+                    if (modTypingEl) {
+                        const tMod = formatTypingIndicator('mod', null);
+                        modTypingEl.textContent = tMod ? `✍️ ${tMod}` : '';
+                        modTypingEl.classList.toggle('hidden', !tMod);
+                    }
+                    if (userTypingEl) {
+                        const tUser = formatTypingIndicator('user', null);
+                        userTypingEl.textContent = tUser ? `✍️ ${tUser}` : '';
+                        userTypingEl.classList.toggle('hidden', !tUser);
+                    }
+                }
+            }, 2000);
         });
     </script>
 </body>

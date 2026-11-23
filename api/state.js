@@ -29,10 +29,13 @@ const INITIAL_STUDENTS = [
 
 function getDefaultState() {
   return {
+    sessionId: Date.now(),
     currentRound: 0,
     isModeratedView: true,
     votingOpen: true,
-    students: INITIAL_STUDENTS,
+    students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
+    attendance: {},
+    typingByTeam: { mod: {}, user: {} },
     roundSpeakers: {
       mod: ["Henrique Barreto Pereira", "Gilbert Carmo Macedo"],
       user: ["Erick Batista dos Santos", "Henrique Cerqueira Fadigas"]
@@ -64,7 +67,9 @@ module.exports = (req, res) => {
 
   if (req.method === 'POST') {
     const body = req.body || {};
-    if (body.state) {
+    if (body.reset === true) {
+      globalState = body.state ? body.state : getDefaultState();
+    } else if (body.state) {
       globalState = { ...globalState, ...body.state };
     }
     return res.status(200).json({ success: true, state: globalState, timestamp: Date.now() });

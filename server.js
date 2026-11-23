@@ -52,10 +52,13 @@ const INITIAL_STUDENTS = [
 
 function getDefaultState() {
   return {
+    sessionId: Date.now(),
     currentRound: 0,
     isModeratedView: true,
     votingOpen: true,
-    students: INITIAL_STUDENTS,
+    students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
+    attendance: {},
+    typingByTeam: { mod: {}, user: {} },
     roundSpeakers: {
       mod: ["Henrique Barreto Pereira", "Gilbert Carmo Macedo"],
       user: ["Erick Batista dos Santos", "Henrique Cerqueira Fadigas"]
@@ -134,7 +137,11 @@ app.get('/api/state', (req, res) => {
 
 app.post('/api/state', (req, res) => {
   const body = req.body || {};
-  if (body.state) {
+  if (body.reset === true) {
+    state = body.state ? body.state : getDefaultState();
+    persistState();
+    broadcast({ type: 'sync_state', state });
+  } else if (body.state) {
     state = { ...state, ...body.state };
     persistState();
     broadcast({ type: 'sync_state', state });
