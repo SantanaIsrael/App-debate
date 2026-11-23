@@ -105,6 +105,80 @@ function broadcast(message, senderWs = null) {
   });
 }
 
+// Helper to apply atomic student actions without overwriting global state
+function applyAction(currentState, action) {
+  if (!action || !action.type) return currentState;
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  if (!currentState.attendance) currentState.attendance = {};
+  if (!currentState.typingByTeam) currentState.typingByTeam = { mod: {}, user: {} };
+  if (!currentState.votesByRound) currentState.votesByRound = [{}, {}, {}, {}, {}, {}];
+  if (!currentState.groupChats) currentState.groupChats = { mod: [], user: [] };
+
+  const markPresent = (studentId) => {
+    if (!studentId) return;
+    if (!currentState.attendance[studentId] || !currentState.attendance[studentId].present) {
+      currentState.attendance[studentId] = { present: true, joinedAt: action.joinedAt || timeStr };
+    }
+  };
+
+  if (action.type === 'checkin') {
+    markPresent(action.studentId);
+  } else if (action.type === 'vote') {
+    const rIdx = Number(action.roundIdx);
+    if (!Number.isNaN(rIdx) && rIdx >= 0 && rIdx < 6 && action.studentId) {
+      if (!currentState.votesByRound[rIdx]) currentState.votesByRound[rIdx] = {};
+      currentState.votesByRound[rIdx][action.studentId] = action.choice;
+      markPresent(action.studentId);
+    }
+  } else if (action.type === 'chat') {
+    const team = action.team === 'mod' ? 'mod' : 'user';
+    if (!currentState.groupChats[team]) currentState.groupChats[team] = [];
+    const exists = action.msgId && currentState.groupChats[team].some(m => m.id === action.msgId);
+    if (!exists && action.text) {
+      currentState.groupChats[team].push({
+        id: action.msgId || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        sender: action.sender,
+        senderId: action.senderId,
+        text: action.text,
+        time: action.time || timeStr
+      });
+      if (currentState.groupChats[team].length > 50) {
+        currentState.groupChats[team] = currentState.groupChats[team].slice(-50);
+      }
+    }
+    if (action.senderId && currentState.typingByTeam[team]) {
+      delete currentState.typingByTeam[team][action.senderId];
+    }
+    markPresent(action.senderId);
+  } else if (action.type === 'typing') {
+    const team = action.team === 'mod' ? 'mod' : 'user';
+    if (!currentState.typingByTeam[team]) currentState.typingByTeam[team] = {};
+    if (action.isTyping && action.studentId) {
+      currentState.typingByTeam[team][action.studentId] = Date.now();
+    } else if (action.studentId) {
+      delete currentState.typingByTeam[team][action.studentId];
+    }
+  }
+  return currentState;
+}
+
+function mergeIncomingState(currentState, incoming) {
+  if (!incoming) return currentState;
+  const merged = { ...currentState, ...incoming };
+  merged.attendance = { ...(currentState.attendance || {}), ...(incoming.attendance || {}) };
+  merged.typingByTeam = {
+    mod: { ...(currentState.typingByTeam?.mod || {}), ...(incoming.typingByTeam?.mod || {}) },
+    user: { ...(currentState.typingByTeam?.user || {}), ...(incoming.typingByTeam?.user || {}) }
+  };
+  merged.votesByRound = [0, 1, 2, 3, 4, 5].map(i => ({
+    ...(currentState.votesByRound?.[i] || {}),
+    ...(incoming.votesByRound?.[i] || {})
+  }));
+  return merged;
+}
+
 // WebSocket handling
 wss.on('connection', (ws) => {
   // Send current state immediately on connect
@@ -113,8 +187,12 @@ wss.on('connection', (ws) => {
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data.toString());
-      if (msg.type === 'sync_state' && msg.state) {
-        state = { ...state, ...msg.state };
+      if (msg.type === 'action' && msg.action) {
+        state = applyAction(state, msg.action);
+        persistState();
+        broadcast({ type: 'sync_state', state }, ws);
+      } else if (msg.type === 'sync_state' && msg.state) {
+        state = msg.reset ? msg.state : mergeIncomingState(state, msg.state);
         persistState();
         // Broadcast to all other clients
         broadcast({ type: 'sync_state', state }, ws);
@@ -141,8 +219,12 @@ app.post('/api/state', (req, res) => {
     state = body.state ? body.state : getDefaultState();
     persistState();
     broadcast({ type: 'sync_state', state });
+  } else if (body.action) {
+    state = applyAction(state, body.action);
+    persistState();
+    broadcast({ type: 'sync_state', state });
   } else if (body.state) {
-    state = { ...state, ...body.state };
+    state = mergeIncomingState(state, body.state);
     persistState();
     broadcast({ type: 'sync_state', state });
   }

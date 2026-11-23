@@ -4,8 +4,5 @@
     "server.js": {
       "includeFiles": "{tailwind.js,viet.webp,index.html,public/**}"
     }
-  },
-  "rewrites": [
-    { "source": "/api/state", "destination": "/api/state.js" }
-  ]
+  }
 }

@@ -886,9 +886,11 @@
         let socket = null;
         let isSyncingHttp = false;
         let httpPollTimer = null;
+        let hasInitialSync = false;
 
         function applyIncomingState(remoteData) {
             if (!remoteData) return;
+            hasInitialSync = true;
             const prevSessionId = state.sessionId;
             const incomingSessionId = remoteData.sessionId || state.sessionId;
 
@@ -926,6 +928,26 @@
             };
             openCommentsSet.add(state.currentRound);
             renderAllViews();
+        }
+
+        async function sendAction(action) {
+            renderAllViews();
+            if (window.location.protocol === 'file:') return;
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'action', action }));
+                return;
+            }
+
+            try {
+                await fetch('/api/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+            } catch (e) {
+                console.warn('[Sync] Falha ao enviar ação via HTTP:', e);
+            }
         }
 
         async function initRealtimeSync() {
@@ -1002,6 +1024,10 @@
 
         async function pushStateToCloud() {
             renderAllViews();
+
+            if (!hasInitialSync && window.location.protocol !== 'file:') {
+                return;
+            }
 
             // 1. Envio instantâneo via WebSocket (Docker local)
             if (socket && socket.readyState === WebSocket.OPEN) {
@@ -1254,7 +1280,11 @@
                     localStorage.setItem('moderanet_student_id', studentId);
                     localStorage.setItem('moderanet_session_id', String(state.sessionId || 1));
                 } catch (e) {}
-                pushStateToCloud();
+                sendAction({
+                    type: 'checkin',
+                    studentId,
+                    joinedAt: state.attendance[studentId]?.joinedAt
+                });
             } else {
                 renderStudentView();
                 renderGroupChat();
@@ -1276,13 +1306,13 @@
                 if (now - lastTypingPush > 1500) {
                     lastTypingPush = now;
                     state.typingByTeam[team][myStudentId] = now;
-                    pushStateToCloud();
+                    sendAction({ type: 'typing', team, studentId: myStudentId, isTyping: true });
                 }
                 clearTimeout(localTypingStopTimer);
                 localTypingStopTimer = setTimeout(() => {
                     if (state.typingByTeam && state.typingByTeam[team] && state.typingByTeam[team][myStudentId]) {
                         delete state.typingByTeam[team][myStudentId];
-                        pushStateToCloud();
+                        sendAction({ type: 'typing', team, studentId: myStudentId, isTyping: false });
                     }
                 }, 4000);
             } else {
@@ -1290,7 +1320,7 @@
                 if (state.typingByTeam[team][myStudentId]) {
                     delete state.typingByTeam[team][myStudentId];
                     lastTypingPush = 0;
-                    pushStateToCloud();
+                    sendAction({ type: 'typing', team, studentId: myStudentId, isTyping: false });
                 }
             }
         };
@@ -1336,7 +1366,7 @@
 
             state.votesByRound[roundIdx][myStudentId] = choice;
             markStudentPresent(myStudentId);
-            pushStateToCloud();
+            sendAction({ type: 'vote', roundIdx, studentId: myStudentId, choice });
         };
 
         window.handleSendGroupChat = function(e) {
@@ -1360,9 +1390,12 @@
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+            const msgId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            const senderName = st.name.split(' ').slice(0, 2).join(' ');
             if (!state.groupChats[team]) state.groupChats[team] = [];
             state.groupChats[team].push({
-                sender: st.name.split(' ').slice(0, 2).join(' '),
+                id: msgId,
+                sender: senderName,
                 senderId: st.id,
                 text,
                 time: timeStr
@@ -1375,11 +1408,19 @@
             }
             markStudentPresent(st.id);
 
-            // Mantém últimas 40 mensagens para leveza
-            if (state.groupChats[team].length > 40) {
-                state.groupChats[team] = state.groupChats[team].slice(-40);
+            // Mantém últimas 50 mensagens para leveza
+            if (state.groupChats[team].length > 50) {
+                state.groupChats[team] = state.groupChats[team].slice(-50);
             }
-            pushStateToCloud();
+            sendAction({
+                type: 'chat',
+                team,
+                msgId,
+                sender: senderName,
+                senderId: st.id,
+                text,
+                time: timeStr
+            });
         }
 
         window.revealBlur = function() {

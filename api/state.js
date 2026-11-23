@@ -52,6 +52,64 @@ function getDefaultState() {
   };
 }
 
+function applyAction(currentState, action) {
+  if (!action || !action.type) return currentState;
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  if (!currentState.attendance) currentState.attendance = {};
+  if (!currentState.typingByTeam) currentState.typingByTeam = { mod: {}, user: {} };
+  if (!currentState.votesByRound) currentState.votesByRound = [{}, {}, {}, {}, {}, {}];
+  if (!currentState.groupChats) currentState.groupChats = { mod: [], user: [] };
+
+  const markPresent = (studentId) => {
+    if (!studentId) return;
+    if (!currentState.attendance[studentId] || !currentState.attendance[studentId].present) {
+      currentState.attendance[studentId] = { present: true, joinedAt: action.joinedAt || timeStr };
+    }
+  };
+
+  if (action.type === 'checkin') {
+    markPresent(action.studentId);
+  } else if (action.type === 'vote') {
+    const rIdx = Number(action.roundIdx);
+    if (!Number.isNaN(rIdx) && rIdx >= 0 && rIdx < 6 && action.studentId) {
+      if (!currentState.votesByRound[rIdx]) currentState.votesByRound[rIdx] = {};
+      currentState.votesByRound[rIdx][action.studentId] = action.choice;
+      markPresent(action.studentId);
+    }
+  } else if (action.type === 'chat') {
+    const team = action.team === 'mod' ? 'mod' : 'user';
+    if (!currentState.groupChats[team]) currentState.groupChats[team] = [];
+    const exists = action.msgId && currentState.groupChats[team].some(m => m.id === action.msgId);
+    if (!exists && action.text) {
+      currentState.groupChats[team].push({
+        id: action.msgId || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        sender: action.sender,
+        senderId: action.senderId,
+        text: action.text,
+        time: action.time || timeStr
+      });
+      if (currentState.groupChats[team].length > 50) {
+        currentState.groupChats[team] = currentState.groupChats[team].slice(-50);
+      }
+    }
+    if (action.senderId && currentState.typingByTeam[team]) {
+      delete currentState.typingByTeam[team][action.senderId];
+    }
+    markPresent(action.senderId);
+  } else if (action.type === 'typing') {
+    const team = action.team === 'mod' ? 'mod' : 'user';
+    if (!currentState.typingByTeam[team]) currentState.typingByTeam[team] = {};
+    if (action.isTyping && action.studentId) {
+      currentState.typingByTeam[team][action.studentId] = Date.now();
+    } else if (action.studentId) {
+      delete currentState.typingByTeam[team][action.studentId];
+    }
+  }
+  return currentState;
+}
+
 module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -69,8 +127,18 @@ module.exports = (req, res) => {
     const body = req.body || {};
     if (body.reset === true) {
       globalState = body.state ? body.state : getDefaultState();
+    } else if (body.action) {
+      globalState = applyAction(globalState, body.action);
     } else if (body.state) {
-      globalState = { ...globalState, ...body.state };
+      globalState = {
+        ...globalState,
+        ...body.state,
+        attendance: { ...(globalState.attendance || {}), ...(body.state.attendance || {}) },
+        votesByRound: [0, 1, 2, 3, 4, 5].map(i => ({
+          ...(globalState.votesByRound?.[i] || {}),
+          ...(body.state.votesByRound?.[i] || {})
+        }))
+      };
     }
     return res.status(200).json({ success: true, state: globalState, timestamp: Date.now() });
   }
