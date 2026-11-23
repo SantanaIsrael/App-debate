@@ -47,35 +47,35 @@
 
     <!-- Barra Superior de Seleção de Modo / Identidade -->
     <header class="bg-slate-900 dark:bg-slate-900/95 border-b border-slate-800 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <button onclick="handleSecretLogoTap()" type="button" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-extrabold text-xl shadow-md select-none focus:outline-none" title="ModeraNet">
+        <div class="max-w-7xl mx-auto px-3 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <button onclick="handleSecretLogoTap()" type="button" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-md select-none focus:outline-none shrink-0" title="ModeraNet">
                     M
                 </button>
-                <div>
+                <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <h1 class="font-bold text-lg leading-tight tracking-tight">ModeraNet</h1>
-                        <span id="connection-badge" class="text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                        <h1 class="font-bold text-base sm:text-lg leading-tight tracking-tight truncate">ModeraNet</h1>
+                        <span id="connection-badge" class="text-[10px] sm:text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
                             ● Ao Vivo
                         </span>
                     </div>
-                    <p class="text-xs text-slate-400">Condução: Yohanan & Israel • Poletto & Morais (2022)</p>
+                    <p class="text-[11px] sm:text-xs text-slate-400 truncate">Condução: Yohanan & Israel • Poletto & Morais (2022)</p>
                 </div>
             </div>
 
             <!-- Seletor de Modo de Visualização (Oculto para Alunos) + Modo Noturno -->
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                 <button onclick="toggleDarkMode()" id="btn-dark-mode" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Alternar Modo Noturno">
                     🌙 Escuro
                 </button>
-                <div id="admin-mode-switcher" class="hidden flex-wrap items-center gap-1 bg-slate-800 p-1 rounded-xl">
-                    <button onclick="setAppMode('student')" id="mode-btn-student" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition bg-indigo-600 text-white">
-                        📱 Celular (Aluno)
+                <div id="admin-mode-switcher" class="hidden w-full sm:w-auto grid grid-cols-3 sm:flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
+                    <button onclick="setAppMode('student')" id="mode-btn-student" class="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-sm font-bold transition bg-indigo-600 text-white text-center">
+                        📱 Aluno
                     </button>
-                    <button onclick="setAppMode('presentation')" id="mode-btn-presentation" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-slate-300 hover:text-white">
-                        🖥️ Apresentação
+                    <button onclick="setAppMode('presentation')" id="mode-btn-presentation" class="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-sm font-bold transition text-slate-300 hover:text-white text-center">
+                        🖥️ Telão
                     </button>
-                    <button onclick="setAppMode('orchestrator')" id="mode-btn-orchestrator" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-amber-300 hover:text-amber-200">
+                    <button onclick="setAppMode('orchestrator')" id="mode-btn-orchestrator" class="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-sm font-bold transition text-amber-300 hover:text-amber-200 text-center">
                         🎛️ Orquestrar
                     </button>
                 </div>
@@ -180,7 +180,7 @@
                 <p class="text-xs text-slate-500 dark:text-slate-400">O chat é exclusivo para cada bancada. Após escolher seu nome, você entrará automaticamente na sala secreta dos <strong>Moderadores</strong> ou dos <strong>Usuários</strong>.</p>
             </div>
 
-            <div id="chat-room-box" class="hidden bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[480px]">
+            <div id="chat-room-box" class="hidden bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[calc(100dvh-250px)] min-h-[340px] max-h-[540px]">
                 <!-- Cabeçalho da Sala Privada -->
                 <div id="chat-room-header" class="px-4 py-3 text-white flex items-center justify-between">
                     <div>
@@ -214,8 +214,8 @@
 
                 <!-- Input de Mensagem -->
                 <form onsubmit="handleSendGroupChat(event)" class="p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-                    <input type="text" id="chat-input-text" oninput="handleChatTyping(this.value)" placeholder="Combine argumentos com sua bancada..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" maxlength="220">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
+                    <input type="text" id="chat-input-text" oninput="handleChatTyping(this.value)" placeholder="Combine argumentos com sua bancada..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-base sm:text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" maxlength="220">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shrink-0">
                         Enviar
                     </button>
                 </form>
@@ -226,31 +226,31 @@
     <!-- ===================================================================== -->
     <!-- MODO 2: APRESENTAÇÃO LIMPA (PARA PROJETAR NO DATASHOW DA SALA)        -->
     <!-- ===================================================================== -->
-    <main id="view-presentation" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+    <main id="view-presentation" class="hidden flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
         <!-- Barra de Progresso das 6 Técnicas -->
-        <div class="grid grid-cols-6 gap-2" id="pres-round-pills"></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2" id="pres-round-pills"></div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
             <!-- Esquerda: O Post da Rede Social em Destaque (7 colunas) -->
             <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-                <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                <div class="bg-slate-900 text-white px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
                     <div>
-                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-300" id="pres-round-tag">TÉCNICA 1 DE 6</span>
-                        <h2 class="text-2xl font-black" id="pres-concept-title">1. Exclusão (Deletion)</h2>
+                        <span class="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-indigo-300" id="pres-round-tag">TÉCNICA 1 DE 6</span>
+                        <h2 class="text-lg sm:text-xl xl:text-2xl font-black" id="pres-concept-title">1. Exclusão (Deletion)</h2>
                     </div>
-                    <span id="pres-mod-status" class="text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/40">
+                    <span id="pres-mod-status" class="text-[11px] sm:text-xs font-extrabold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/40">
                         🛡️ Moderado pela Plataforma
                     </span>
                 </div>
 
-                <div class="bg-indigo-50 dark:bg-indigo-950/40 px-6 py-3 border-b border-indigo-100 dark:border-indigo-900/50 text-sm text-indigo-950 dark:text-indigo-200">
+                <div class="bg-indigo-50 dark:bg-indigo-950/40 px-4 sm:px-6 py-3 border-b border-indigo-100 dark:border-indigo-900/50 text-xs sm:text-sm text-indigo-950 dark:text-indigo-200">
                     <strong>Base Teórica (Poletto & Morais, 2022):</strong> <span id="pres-theory"></span>
                 </div>
 
                 <!-- Card do Post -->
-                <div class="p-6 flex-1 flex flex-col justify-between">
-                    <div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-5 bg-slate-50 dark:bg-slate-800/70 shadow-inner">
+                <div class="p-4 sm:p-6 flex-1 flex flex-col justify-between">
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/70 shadow-inner">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center gap-3">
                                 <div id="pres-post-avatar" class="w-12 h-12 rounded-full bg-indigo-600 text-white font-extrabold flex items-center justify-center text-xl">H</div>
@@ -284,26 +284,26 @@
             <div class="lg:col-span-5 flex flex-col gap-5">
                 
                 <!-- Cronômetro Gigante -->
-                <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-lg border border-slate-800 flex items-center justify-between">
+                <div class="bg-slate-900 text-white rounded-3xl p-4 sm:p-6 shadow-lg border border-slate-800 flex items-center justify-between gap-3">
                     <div>
-                        <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Tempo de Fala</span>
-                        <div id="pres-timer-display" class="text-5xl font-black font-mono text-white mt-1">01:30</div>
+                        <span class="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-slate-400">Tempo de Fala</span>
+                        <div id="pres-timer-display" class="text-3xl sm:text-4xl xl:text-5xl font-black font-mono text-white mt-1">01:30</div>
                     </div>
                     <div class="text-right">
-                        <span class="text-xs text-indigo-300 font-semibold block">Acesse no celular:</span>
-                        <span class="text-sm font-bold bg-white/10 px-3 py-1 rounded-lg inline-block mt-1">📱 Modo Aluno</span>
+                        <span class="text-[11px] sm:text-xs text-indigo-300 font-semibold block">Acesse no celular:</span>
+                        <span class="text-xs sm:text-sm font-bold bg-white/10 px-3 py-1 rounded-lg inline-block mt-1">📱 Modo Aluno</span>
                     </div>
                 </div>
 
                 <!-- Bancada Sorteada -->
-                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-md border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base">🎙️ Porta-Vozes Sorteados Nesta Rodada</h3>
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 shadow-md border border-slate-200 dark:border-slate-800 space-y-3 sm:space-y-4">
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base">🎙️ Porta-Vozes Sorteados Nesta Rodada</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
+                        <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl p-3.5 sm:p-4">
                             <span class="text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase block mb-2">🛡️ Moderadores (Plataforma)</span>
                             <div id="pres-mod-speakers" class="space-y-1.5 text-sm font-bold text-blue-950 dark:text-blue-100"></div>
                         </div>
-                        <div class="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl p-4">
+                        <div class="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl p-3.5 sm:p-4">
                             <span class="text-xs font-extrabold text-purple-800 dark:text-purple-300 uppercase block mb-2">👤 Usuários (Proteção/Direitos)</span>
                             <div id="pres-user-speakers" class="space-y-1.5 text-sm font-bold text-purple-950 dark:text-purple-100"></div>
                         </div>
@@ -311,21 +311,21 @@
                 </div>
 
                 <!-- Placar ao Vivo da Rodada -->
-                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-md border-2 border-indigo-100 dark:border-indigo-900/50 flex-1 flex flex-col justify-center">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 shadow-md border-2 border-indigo-100 dark:border-indigo-900/50 flex-1 flex flex-col justify-center">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-extrabold text-slate-900 dark:text-white text-base">🗳️ Votação da Turma ao Vivo</h3>
+                        <h3 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base">🗳️ Votação da Turma ao Vivo</h3>
                         <span id="pres-vote-total" class="text-xs font-extrabold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full">0 votos</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 my-2">
-                        <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 text-center">
-                            <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">👍 Like • Proteção Legítima</span>
-                            <span id="pres-votes-legit" class="text-4xl font-black text-emerald-700 dark:text-emerald-400 my-1 block">0</span>
+                    <div class="grid grid-cols-2 gap-3 sm:gap-4 my-2">
+                        <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-3 sm:p-4 text-center">
+                            <span class="text-[11px] sm:text-xs font-bold text-emerald-800 dark:text-emerald-300 block">👍 Like • Proteção Legítima</span>
+                            <span id="pres-votes-legit" class="text-2xl sm:text-3xl xl:text-4xl font-black text-emerald-700 dark:text-emerald-400 my-1 block">0</span>
                             <span id="pres-pct-legit" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">0%</span>
                         </div>
-                        <div class="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl p-4 text-center">
-                            <span class="text-xs font-bold text-rose-800 dark:text-rose-300 block">👎 Deslike • Censura Indevida</span>
-                            <span id="pres-votes-cens" class="text-4xl font-black text-rose-700 dark:text-rose-400 my-1 block">0</span>
+                        <div class="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl p-3 sm:p-4 text-center">
+                            <span class="text-[11px] sm:text-xs font-bold text-rose-800 dark:text-rose-300 block">👎 Deslike • Censura Indevida</span>
+                            <span id="pres-votes-cens" class="text-2xl sm:text-3xl xl:text-4xl font-black text-rose-700 dark:text-rose-400 my-1 block">0</span>
                             <span id="pres-pct-cens" class="text-xs font-bold text-rose-600 dark:text-rose-400">0%</span>
                         </div>
                     </div>
@@ -346,27 +346,27 @@
     <main id="view-orchestrator" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
         
         <!-- Banner de Controle Geral -->
-        <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+        <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-lg border border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 class="text-xl font-extrabold flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-extrabold flex items-center gap-2">
                     <span>🎛️</span> Painel de Orquestramento — Yohanan & Israel
                 </h2>
                 <p class="text-xs text-slate-300 mt-0.5">Avançar rodadas libera novos posts no feed dos celulares sem apagar os anteriores.</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="copyStudentShareLink()" id="btn-copy-student-link" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+            <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+                <button onclick="copyStudentShareLink()" id="btn-copy-student-link" class="flex-1 sm:flex-initial justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🔗 Copiar Link Só dos Alunos
                 </button>
-                <button onclick="openAttendanceModal()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                <button onclick="openAttendanceModal()" class="flex-1 sm:flex-initial justify-center bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     📋 Lista de Presença (<span id="orch-attendance-count">0</span>/23)
                 </button>
-                <button onclick="shuffleAllTeams()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                <button onclick="shuffleAllTeams()" class="flex-1 sm:flex-initial justify-center bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🎲 Sortear Lados da Turma (23 Alunos)
                 </button>
-                <button onclick="drawRoundSpeakers()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                <button onclick="drawRoundSpeakers()" class="flex-1 sm:flex-initial justify-center bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🎙️ Sortear Porta-Vozes da Rodada
                 </button>
-                <button onclick="resetDebateSession()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                <button onclick="resetDebateSession()" class="flex-1 sm:flex-initial justify-center bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow transition">
                     🔄 Zerar Sessão
                 </button>
             </div>
@@ -526,8 +526,8 @@
                 </button>
             </div>
 
-            <div class="overflow-y-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl">
-                <table class="w-full text-left text-xs">
+            <div class="overflow-x-auto overflow-y-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase sticky top-0">
                         <tr>
                             <th class="py-2.5 px-3">#</th>
@@ -781,6 +781,7 @@
             currentRound: 0,
             isModeratedView: true,
             votingOpen: true,
+            votingOpenByRound: [true, true, true, true, true, true],
             students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
             attendance: {},
             typingByTeam: { mod: {}, user: {} },
@@ -921,6 +922,9 @@
                 ...remoteData,
                 sessionId: incomingSessionId,
                 students: normalizedStudents,
+                votingOpenByRound: Array.isArray(remoteData.votingOpenByRound)
+                    ? remoteData.votingOpenByRound
+                    : (state.votingOpenByRound || [true, true, true, true, true, true]),
                 attendance: remoteData.attendance || {},
                 typingByTeam: remoteData.typingByTeam || { mod: {}, user: {} },
                 votesByRound: remoteData.votesByRound || [{}, {}, {}, {}, {}, {}],
@@ -1156,9 +1160,17 @@
         // AÇÕES DO ORQUESTRADOR (YOHANAN & ISRAEL)
         // =========================================================================
         window.selectRound = function(idx) {
+            if (!Array.isArray(state.votingOpenByRound)) {
+                state.votingOpenByRound = [true, true, true, true, true, true];
+            }
+            const prevRound = state.currentRound;
+            if (prevRound !== idx && prevRound >= 0 && prevRound < 6) {
+                // Encerra a urna da rodada anterior ao avançar/mudar de etapa
+                state.votingOpenByRound[prevRound] = false;
+            }
             state.currentRound = idx;
             state.isModeratedView = true;
-            state.votingOpen = true;
+            state.votingOpen = state.votingOpenByRound[idx] !== false;
             openCommentsSet.add(idx);
             pushStateToCloud();
         };
@@ -1169,7 +1181,11 @@
         };
 
         window.toggleVotingOpen = function() {
+            if (!Array.isArray(state.votingOpenByRound)) {
+                state.votingOpenByRound = [true, true, true, true, true, true];
+            }
             state.votingOpen = !state.votingOpen;
+            state.votingOpenByRound[state.currentRound] = state.votingOpen;
             pushStateToCloud();
         };
 
@@ -1222,6 +1238,7 @@
                 currentRound: 0,
                 isModeratedView: true,
                 votingOpen: true,
+                votingOpenByRound: [true, true, true, true, true, true],
                 students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
                 attendance: {},
                 typingByTeam: { mod: {}, user: {} },
@@ -1361,8 +1378,8 @@
                 if (warn) warn.classList.remove('hidden');
                 return;
             }
-            // Permite votar na rodada atual enquanto a urna estiver aberta (ou nas anteriores para quem chegou depois)
-            if (roundIdx === state.currentRound && !state.votingOpen) return;
+            const isRoundOpen = roundIdx === state.currentRound && state.votingOpen && (!Array.isArray(state.votingOpenByRound) || state.votingOpenByRound[roundIdx] !== false);
+            if (!isRoundOpen) return;
 
             state.votesByRound[roundIdx][myStudentId] = choice;
             markStudentPresent(myStudentId);
@@ -1525,7 +1542,8 @@
                 const showModerated = isLatest ? state.isModeratedView : true;
                 const counts = getRoundVoteCounts(r.id);
                 const myVote = myStudentId ? (state.votesByRound[r.id] || {})[myStudentId] : null;
-                const isLocked = isLatest && !state.votingOpen;
+                const isRoundOpen = isLatest && state.votingOpen && (!Array.isArray(state.votingOpenByRound) || state.votingOpenByRound[r.id] !== false);
+                const isLocked = !isRoundOpen;
                 const commentsOpen = openCommentsSet.has(r.id);
 
                 // Filtra comentários exclusivos para o grupo do aluno logado
@@ -1588,7 +1606,7 @@
 
                                 <div class="flex items-center gap-2">
                                     <!-- Botão Like (Proteção Legítima) -->
-                                    <button onclick="castPostVote(${r.id}, 'legit')" ${isLocked ? 'disabled' : ''} class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                                    <button onclick="castPostVote(${r.id}, 'legit')" ${isLocked ? 'disabled' : ''} class="flex-1 min-h-[42px] py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
                                         myVote === 'legit'
                                             ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-400'
@@ -1598,7 +1616,7 @@
                                     </button>
 
                                     <!-- Botão Deslike (Censura Indevida) -->
-                                    <button onclick="castPostVote(${r.id}, 'censorship')" ${isLocked ? 'disabled' : ''} class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                                    <button onclick="castPostVote(${r.id}, 'censorship')" ${isLocked ? 'disabled' : ''} class="flex-1 min-h-[42px] py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
                                         myVote === 'censorship'
                                             ? 'bg-rose-600 border-rose-600 text-white shadow-sm'
                                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-rose-400'
@@ -1608,7 +1626,7 @@
                                     </button>
 
                                     <!-- Botão Comentários do Grupo -->
-                                    <button onclick="togglePostComments(${r.id})" class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition ${
+                                    <button onclick="togglePostComments(${r.id})" class="flex-1 min-h-[42px] py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition ${
                                         commentsOpen
                                             ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
                                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
@@ -1621,7 +1639,7 @@
                                 <p id="post-vote-warn-${r.id}" class="hidden text-center text-[11px] font-bold text-rose-600 dark:text-rose-400">
                                     ⚠️ Escolha seu nome no topo da página antes de dar Like ou Deslike!
                                 </p>
-                                ${isLocked ? `<p class="text-center text-[11px] font-semibold text-slate-400">🔒 Votação encerrada pelos apresentadores.</p>` : ''}
+                                ${isLocked ? `<p class="text-center text-[11px] font-semibold text-slate-400">${!isLatest ? '🔒 Rodada encerrada — votação disponível apenas na rodada atual.' : '🔒 Votação encerrada pelos apresentadores.'}</p>` : ''}
                             </div>
                         </div>
 

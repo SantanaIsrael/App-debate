@@ -56,6 +56,7 @@ function getDefaultState() {
     currentRound: 0,
     isModeratedView: true,
     votingOpen: true,
+    votingOpenByRound: [true, true, true, true, true, true],
     students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
     attendance: {},
     typingByTeam: { mod: {}, user: {} },
@@ -127,7 +128,9 @@ function applyAction(currentState, action) {
     markPresent(action.studentId);
   } else if (action.type === 'vote') {
     const rIdx = Number(action.roundIdx);
-    if (!Number.isNaN(rIdx) && rIdx >= 0 && rIdx < 6 && action.studentId) {
+    const isCurrentRound = rIdx === Number(currentState.currentRound);
+    const isRoundOpen = currentState.votingOpen !== false && (!currentState.votingOpenByRound || currentState.votingOpenByRound[rIdx] !== false);
+    if (!Number.isNaN(rIdx) && rIdx >= 0 && rIdx < 6 && action.studentId && isCurrentRound && isRoundOpen) {
       if (!currentState.votesByRound[rIdx]) currentState.votesByRound[rIdx] = {};
       currentState.votesByRound[rIdx][action.studentId] = action.choice;
       markPresent(action.studentId);
