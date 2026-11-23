@@ -1,12 +1,9 @@
 services:
-  app-debate:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: app_debate_social
+  moderanet:
+    build: .
+    container_name: moderanet_debate
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
     restart: unless-stopped
+    volumes:
+      - ./data:/app/data

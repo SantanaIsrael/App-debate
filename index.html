@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModeraNet — Debate Interativo (Yohanan & Israel)</title>
+    <script src="tailwind.js"></script>
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class'
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .blur-content {
+            filter: blur(10px);
+            user-select: none;
+            transition: filter 0.35s ease;
+        }
+        .blur-content.revealed {
+            filter: blur(0);
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(99, 102, 241, 0.4); }
+            50% { border-color: rgba(99, 102, 241, 1); }
+        }
+        .active-round-card {
+            animation: pulse-border 2.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Barra Superior de Seleção de Modo / Identidade -->
+    <header class="bg-slate-900 dark:bg-slate-900/95 border-b border-slate-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <button onclick="handleSecretLogoTap()" type="button" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-extrabold text-xl shadow-md select-none focus:outline-none" title="ModeraNet">
+                    M
+                </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-lg leading-tight tracking-tight">ModeraNet</h1>
+                        <span id="connection-badge" class="text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                            ● Ao Vivo
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">Condução: Yohanan & Israel • Poletto & Morais (2022)</p>
+                </div>
+            </div>
+
+            <!-- Seletor de Modo de Visualização (Oculto para Alunos) + Modo Noturno -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="toggleDarkMode()" id="btn-dark-mode" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Alternar Modo Noturno">
+                    🌙 Escuro
+                </button>
+                <div id="admin-mode-switcher" class="hidden flex-wrap items-center gap-1 bg-slate-800 p-1 rounded-xl">
+                    <button onclick="setAppMode('student')" id="mode-btn-student" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition bg-indigo-600 text-white">
+                        📱 Celular (Aluno)
+                    </button>
+                    <button onclick="setAppMode('presentation')" id="mode-btn-presentation" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-slate-300 hover:text-white">
+                        🖥️ Apresentação
+                    </button>
+                    <button onclick="setAppMode('orchestrator')" id="mode-btn-orchestrator" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition text-amber-300 hover:text-amber-200">
+                        🎛️ Orquestrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal Discreto para Desbloqueio de Apresentador (Caso abra sem ?admin=yohanan-israel) -->
+    <div id="admin-unlock-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-3">
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">🔐 Acesso dos Condutores</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Digite a senha de Yohanan & Israel para liberar Apresentação e Orquestramento:</p>
+            <input type="password" id="admin-pin-input" placeholder="Senha (ex: debate2026)" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <p id="admin-pin-error" class="hidden text-[11px] font-bold text-rose-600">Senha incorreta.</p>
+            <div class="flex justify-end gap-2 pt-1">
+                <button onclick="closeAdminModal()" class="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white">Cancelar</button>
+                <button onclick="verifyAdminPin()" class="px-4 py-1.5 text-xs font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODO 1: VISUALIZAÇÃO DO ALUNO NO CELULAR (TIMELINE + CHAT DO GRUPO)   -->
+    <!-- ===================================================================== -->
+    <main id="view-student" class="flex-1 max-w-lg w-full mx-auto px-3 py-4 space-y-4">
+        
+        <!-- Card de Identificação do Aluno -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <label for="student-identity-select" class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    👤 Quem é você na turma?
+                </label>
+                <span id="student-points-badge" class="hidden text-xs font-extrabold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2.5 py-0.5 rounded-full">
+                    ⭐ 0 Pontos
+                </span>
+            </div>
+            <select id="student-identity-select" onchange="selectStudentIdentity(this.value)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">-- Selecione seu nome na lista --</option>
+            </select>
+
+            <!-- Papel Sorteado do Aluno -->
+            <div id="student-role-banner" class="hidden mt-3 rounded-xl p-3 border text-xs">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+
+        <!-- Abas internas do Celular: Feed da Rede Social vs. Chat Privado da Bancada -->
+        <div class="grid grid-cols-2 gap-2 bg-slate-200/80 dark:bg-slate-900 p-1 rounded-2xl border border-slate-300/60 dark:border-slate-800">
+            <button onclick="setStudentSubTab('feed')" id="subtab-btn-feed" class="py-2.5 px-3 rounded-xl text-xs font-extrabold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-xs transition">
+                📰 Feed do Debate (<span id="feed-count-badge">1</span>/6)
+            </button>
+            <button onclick="setStudentSubTab('chat')" id="subtab-btn-chat" class="py-2.5 px-3 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5">
+                <span>💬 Chat Secreto do Grupo</span>
+                <span id="chat-unread-badge" class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+            </button>
+        </div>
+
+        <!-- SUB-ABA A: TIMELINE CONTÍNUA DOS POSTS ATÉ A RODADA ATUAL -->
+        <div id="student-subtab-feed" class="space-y-4">
+            <div id="stu-timeline-container" class="space-y-5">
+                <!-- Posts empilhados via JS conforme avanço das rodadas -->
+            </div>
+
+            <!-- Mural de Pontuação -->
+            <div class="bg-gradient-to-r from-amber-50 to-indigo-50 dark:from-amber-950/30 dark:to-indigo-950/30 rounded-2xl p-4 border border-amber-200 dark:border-amber-900/50">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-2">🏆 Ranking de Participação (Pontos no Debate)</h3>
+                <div id="stu-points-leaderboard" class="flex flex-wrap gap-1.5">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 italic">Fale no debate para ganhar pontos de Yohanan & Israel!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUB-ABA B: CHAT PRIVADO DA BANCADA (MODERADOR OU USUÁRIO) -->
+        <div id="student-subtab-chat" class="hidden">
+            <div id="chat-locked-notice" class="bg-white dark:bg-slate-900 rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800 space-y-2">
+                <div class="text-3xl">🔒</div>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">Selecione seu nome acima</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">O chat é exclusivo para cada bancada. Após escolher seu nome, você entrará automaticamente na sala secreta dos <strong>Moderadores</strong> ou dos <strong>Usuários</strong>.</p>
+            </div>
+
+            <div id="chat-room-box" class="hidden bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[480px]">
+                <!-- Cabeçalho da Sala Privada -->
+                <div id="chat-room-header" class="px-4 py-3 text-white flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest opacity-80 block">Canal Privado da Bancada</span>
+                        <h3 class="font-bold text-sm" id="chat-room-title">🛡️ Sala dos Moderadores</h3>
+                    </div>
+                    <span class="text-[11px] bg-black/25 px-2.5 py-1 rounded-full font-semibold">O outro lado não vê</span>
+                </div>
+
+                <!-- Lista de Mensagens -->
+                <div id="chat-messages-list" class="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-slate-50 dark:bg-slate-950/60">
+                    <!-- Mensagens via JS -->
+                </div>
+
+                <!-- Sugestões Rápidas para Ajudar o Porta-Voz -->
+                <div class="px-3 py-2 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-1.5 overflow-x-auto">
+                    <button onclick="sendQuickChatHelp('Cita o Marco Civil / Termos de Uso! 📜')" class="shrink-0 text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1 rounded-full hover:bg-indigo-50 dark:hover:bg-slate-700">
+                        + 📜 Termos / Lei
+                    </button>
+                    <button onclick="sendQuickChatHelp('Fala da diferença entre contexto e algoritmo! 🤖')" class="shrink-0 text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1 rounded-full hover:bg-indigo-50 dark:hover:bg-slate-700">
+                        + 🤖 Contexto vs IA
+                    </button>
+                    <button onclick="sendQuickChatHelp('Lembra dos Princípios de Santa Clara (Aviso e Recurso)! ⚖️')" class="shrink-0 text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1 rounded-full hover:bg-indigo-50 dark:hover:bg-slate-700">
+                        + ⚖️ Santa Clara
+                    </button>
+                </div>
+
+                <!-- Input de Mensagem -->
+                <form onsubmit="handleSendGroupChat(event)" class="p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+                    <input type="text" id="chat-input-text" placeholder="Combine argumentos com sua bancada..." class="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" maxlength="220">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
+                        Enviar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODO 2: APRESENTAÇÃO LIMPA (PARA PROJETAR NO DATASHOW DA SALA)        -->
+    <!-- ===================================================================== -->
+    <main id="view-presentation" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+        
+        <!-- Barra de Progresso das 6 Técnicas -->
+        <div class="grid grid-cols-6 gap-2" id="pres-round-pills"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <!-- Esquerda: O Post da Rede Social em Destaque (7 colunas) -->
+            <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+                <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-300" id="pres-round-tag">TÉCNICA 1 DE 6</span>
+                        <h2 class="text-2xl font-black" id="pres-concept-title">1. Exclusão (Deletion)</h2>
+                    </div>
+                    <span id="pres-mod-status" class="text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/40">
+                        🛡️ Moderado pela Plataforma
+                    </span>
+                </div>
+
+                <div class="bg-indigo-50 dark:bg-indigo-950/40 px-6 py-3 border-b border-indigo-100 dark:border-indigo-900/50 text-sm text-indigo-950 dark:text-indigo-200">
+                    <strong>Base Teórica (Poletto & Morais, 2022):</strong> <span id="pres-theory"></span>
+                </div>
+
+                <!-- Card do Post -->
+                <div class="p-6 flex-1 flex flex-col justify-between">
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-5 bg-slate-50 dark:bg-slate-800/70 shadow-inner">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div id="pres-post-avatar" class="w-12 h-12 rounded-full bg-indigo-600 text-white font-extrabold flex items-center justify-center text-xl">H</div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-base text-slate-900 dark:text-white" id="pres-post-author">@historia_arquivo</span>
+                                        <span class="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2.5 py-0.5 rounded-full font-semibold" id="pres-post-badge">Acervo</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400" id="pres-post-meta">Publicação</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pres-post-body" class="space-y-3"></div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            <span id="pres-metric-likes">❤️ 0</span>
+                            <span id="pres-metric-comments">💬 0</span>
+                            <span id="pres-metric-reach">👁️ 100%</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 p-4 rounded-r-2xl">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 block mb-1">🔥 Pergunta Central da Rodada:</span>
+                        <p class="text-base font-bold text-amber-950 dark:text-amber-100" id="pres-prompt"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direita: Debatedores Sorteados + Cronômetro + Placar ao Vivo (5 colunas) -->
+            <div class="lg:col-span-5 flex flex-col gap-5">
+                
+                <!-- Cronômetro Gigante -->
+                <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-lg border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Tempo de Fala</span>
+                        <div id="pres-timer-display" class="text-5xl font-black font-mono text-white mt-1">01:30</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-indigo-300 font-semibold block">Acesse no celular:</span>
+                        <span class="text-sm font-bold bg-white/10 px-3 py-1 rounded-lg inline-block mt-1">📱 Modo Aluno</span>
+                    </div>
+                </div>
+
+                <!-- Bancada Sorteada -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-md border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base">🎙️ Porta-Vozes Sorteados Nesta Rodada</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
+                            <span class="text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase block mb-2">🛡️ Moderadores (Plataforma)</span>
+                            <div id="pres-mod-speakers" class="space-y-1.5 text-sm font-bold text-blue-950 dark:text-blue-100"></div>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl p-4">
+                            <span class="text-xs font-extrabold text-purple-800 dark:text-purple-300 uppercase block mb-2">👤 Usuários (Proteção/Direitos)</span>
+                            <div id="pres-user-speakers" class="space-y-1.5 text-sm font-bold text-purple-950 dark:text-purple-100"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placar ao Vivo da Rodada -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-md border-2 border-indigo-100 dark:border-indigo-900/50 flex-1 flex flex-col justify-center">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-extrabold text-slate-900 dark:text-white text-base">🗳️ Votação da Turma ao Vivo</h3>
+                        <span id="pres-vote-total" class="text-xs font-extrabold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full">0 votos</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 my-2">
+                        <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 text-center">
+                            <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">👍 Like • Proteção Legítima</span>
+                            <span id="pres-votes-legit" class="text-4xl font-black text-emerald-700 dark:text-emerald-400 my-1 block">0</span>
+                            <span id="pres-pct-legit" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">0%</span>
+                        </div>
+                        <div class="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl p-4 text-center">
+                            <span class="text-xs font-bold text-rose-800 dark:text-rose-300 block">👎 Deslike • Censura Indevida</span>
+                            <span id="pres-votes-cens" class="text-4xl font-black text-rose-700 dark:text-rose-400 my-1 block">0</span>
+                            <span id="pres-pct-cens" class="text-xs font-bold text-rose-600 dark:text-rose-400">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full h-5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex mt-3 shadow-inner">
+                        <div id="pres-bar-legit" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+                        <div id="pres-bar-cens" class="bg-rose-500 h-full transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODO 3: ORQUESTRAMENTO DO DEBATE (NOTEBOOK DE YOHANAN & ISRAEL)       -->
+    <!-- ===================================================================== -->
+    <main id="view-orchestrator" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+        
+        <!-- Banner de Controle Geral -->
+        <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-extrabold flex items-center gap-2">
+                    <span>🎛️</span> Painel de Orquestramento — Yohanan & Israel
+                </h2>
+                <p class="text-xs text-slate-300 mt-0.5">Avançar rodadas libera novos posts no feed dos celulares sem apagar os anteriores.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="copyStudentShareLink()" id="btn-copy-student-link" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    🔗 Copiar Link Só dos Alunos
+                </button>
+                <button onclick="shuffleAllTeams()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    🎲 Sortear Lados da Turma (23 Alunos)
+                </button>
+                <button onclick="drawRoundSpeakers()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    🎙️ Sortear Porta-Vozes da Rodada
+                </button>
+            </div>
+        </div>
+
+        <!-- Controle de Rodadas & Visualização do Post -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Coluna Esquerda (7 cols): Rodada, Estado do Post, Cronômetro e Urna -->
+            <div class="lg:col-span-7 space-y-5">
+                
+                <!-- Seletor das 6 Rodadas -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">1. Escolher Rodada Ativa (Adiciona Post no Feed dos Celulares):</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="orch-round-grid"></div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 block">Estado Visual do Post Atual:</span>
+                            <span id="orch-mod-label" class="text-sm font-extrabold text-rose-700 dark:text-rose-400">Moderado pela Plataforma (Depois)</span>
+                        </div>
+                        <button onclick="toggleModerationState()" class="bg-slate-900 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                            ⚡ Alternar: Post Original (Antes) / Moderado (Depois)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cronômetro e Controle da Urna -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Cronômetro -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">2. Cronômetro de Fala</span>
+                        <div id="orch-timer-display" class="text-4xl font-black font-mono text-slate-900 dark:text-white my-2">01:30</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button onclick="setTimer(90)" class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">1m30</button>
+                            <button onclick="setTimer(60)" class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">1m00</button>
+                            <button onclick="toggleTimer()" id="orch-btn-timer" class="px-3.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">Iniciar</button>
+                            <button onclick="setTimer(90)" class="px-2.5 py-1.5 text-xs font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded-lg">Zerar</button>
+                        </div>
+                    </div>
+
+                    <!-- Controle da Urna dos Celulares -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">3. Votação nos Posts</span>
+                            <div class="mt-2 flex items-center justify-between">
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Status da Urna Atual:</span>
+                                <span id="orch-voting-badge" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Aberta</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="toggleVotingOpen()" id="orch-btn-voting" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold py-2 px-3 rounded-xl transition">
+                                🔒 Encerrar Urna
+                            </button>
+                            <button onclick="clearCurrentRoundVotes()" class="bg-rose-100 dark:bg-rose-950/60 hover:bg-rose-200 text-rose-800 dark:text-rose-300 text-xs font-bold py-2 px-3 rounded-xl transition" title="Zerar votos desta rodada">
+                                Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placar Consolidado das 6 Rodadas -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mb-3">📊 Placar Geral das 6 Rodadas</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase">
+                                    <th class="py-2 px-2">Técnica</th>
+                                    <th class="py-2 px-2">👍 Proteção</th>
+                                    <th class="py-2 px-2">👎 Censura</th>
+                                    <th class="py-2 px-2">Veredito</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orch-results-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Monitoramento ao Vivo dos Chats Privados de Cada Grupo -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">👀 Monitoramento dos Chats das Bancadas (Visão dos Apresentadores)</h3>
+                        <span class="text-[11px] font-semibold text-slate-400">Atualiza ao vivo</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Chat Moderadores -->
+                        <div class="rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 overflow-hidden flex flex-col h-56">
+                            <div class="bg-blue-700 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                <span>🛡️ Grupo Moderadores</span>
+                                <span id="orch-chat-mod-count" class="text-[10px] bg-black/25 px-2 py-0.5 rounded-full">0</span>
+                            </div>
+                            <div id="orch-chat-mod-list" class="flex-1 p-2.5 overflow-y-auto space-y-1.5 text-xs"></div>
+                        </div>
+
+                        <!-- Chat Usuários -->
+                        <div class="rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 overflow-hidden flex flex-col h-56">
+                            <div class="bg-purple-700 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                <span>👤 Grupo Usuários</span>
+                                <span id="orch-chat-user-count" class="text-[10px] bg-black/25 px-2 py-0.5 rounded-full">0</span>
+                            </div>
+                            <div id="orch-chat-user-list" class="flex-1 p-2.5 overflow-y-auto space-y-1.5 text-xs"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita (5 cols): Gestão dos 23 Alunos + Busca + Pontos -->
+            <div class="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base">⭐ Turma (23 Alunos) & Pontos</h3>
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Sorteados no topo</span>
+                </div>
+
+                <!-- Campo de Busca -->
+                <div class="relative mb-2.5">
+                    <input type="text" id="orch-student-search" oninput="renderOrchestratorStudentsList()" placeholder="🔍 Buscar aluno por nome..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="clearStudentSearch()" id="orch-clear-search-btn" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold">✕</button>
+                </div>
+
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                    <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span><strong>Mod</strong> = Plataforma &nbsp;|&nbsp;
+                    <span class="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1"></span><strong>Usu</strong> = Usuário &nbsp;|&nbsp;
+                    <span class="text-amber-600 dark:text-amber-400 font-bold">🎙️ = Sorteado</span>
+                </p>
+
+                <div id="orch-students-list" class="space-y-2 overflow-y-auto max-h-[620px] pr-1">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Motor de Sincronização em Tempo Real (Docker Local / WebSocket e Vercel HTTP) -->
+    <script>
+
+        // =========================================================================
+        // LISTA OFICIAL DOS 25 ESTUDANTES (2 CONDUTORES + 23 PARTICIPANTES)
+        // =========================================================================
+        const INITIAL_STUDENTS = [
+            { id: "s01", name: "Henrique Barreto Pereira", team: "mod", points: 0 },
+            { id: "s02", name: "Erick Batista dos Santos", team: "user", points: 0 },
+            { id: "s03", name: "Gilbert Carmo Macedo", team: "mod", points: 0 },
+            { id: "s04", name: "Henrique Cerqueira Fadigas", team: "user", points: 0 },
+            { id: "s05", name: "Henrique Daniel Resende", team: "mod", points: 0 },
+            { id: "s06", name: "Augusto Fagundes Moreira Barros", team: "user", points: 0 },
+            { id: "s07", name: "Bruno Felipe dos Santos Pereira", team: "mod", points: 0 },
+            { id: "s08", name: "Daniel Figueiredo Araujo", team: "user", points: 0 },
+            { id: "s09", name: "Lucas Gabriel Ferreira", team: "mod", points: 0 },
+            { id: "s10", name: "Antonio Henrique Oliveira Santos", team: "user", points: 0 },
+            { id: "s11", name: "Vivian Kesse", team: "mod", points: 0 },
+            { id: "s12", name: "Christian Menezes Oliveira", team: "user", points: 0 },
+            { id: "s13", name: "Joao Paulo Santos Luz Pereira", team: "mod", points: 0 },
+            { id: "s14", name: "Henio Pedro Silva Santana", team: "user", points: 0 },
+            { id: "s15", name: "Ariel Pina Ribeiro", team: "mod", points: 0 },
+            { id: "s16", name: "Sara Raquel Pinto Brandao Silva", team: "user", points: 0 },
+            { id: "s17", name: "Deyvid Reis Santos", team: "mod", points: 0 },
+            { id: "s18", name: "Gabriel Rosa Galdino", team: "user", points: 0 },
+            { id: "s19", name: "Bruno Schumacher Farias Souza", team: "mod", points: 0 },
+            { id: "s20", name: "Ylo Silva de Sa Bittencourt", team: "user", points: 0 },
+            { id: "s21", name: "Mateus Silva Lisboa", team: "mod", points: 0 },
+            { id: "s22", name: "Lucas Vieira de Almeida", team: "user", points: 0 },
+            { id: "s23", name: "Joao Vitor Guimaraes dos Santos", team: "mod", points: 0 }
+        ];
+
+        // =========================================================================
+        // OS 6 CENÁRIOS DO ARTIGO + COMENTÁRIOS ESTRATÉGICOS (DEFESA E ACUSAÇÃO)
+        // =========================================================================
+        const ROUNDS_DATA = [
+            {
+                id: 0,
+                shortName: "1. Exclusão",
+                fullName: "1. Exclusão (Deletion)",
+                theory: "Remoção total da publicação (p. 110). O artigo destaca o caso real da foto histórica da Guerra do Vietnã removida pelo Facebook por conter nudez infantil, desconsiderando o valor histórico e jornalístico.",
+                author: "@acervo_fotojornalismo",
+                badge: "Imprensa Histórica",
+                meta: "Pulitzer 1973 • Registro Histórico da Guerra do Vietnã",
+                prompt: "A IA detectou nudez infantil nesta fotografia histórica da Guerra do Vietnã e excluiu o post automaticamente. Para proteger menores contra exploração, o algoritmo deve apagar tudo sem analisar o contexto histórico?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed mb-3">
+                        📸 <strong>Memória Histórica (1972):</strong> Registro icônico dos horrores da Guerra do Vietnã que ajudou a mobilizar a opinião pública mundial pela paz.
+                    </p>
+                    <div class="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-900">
+                        <img src="viet.webp" alt="Registro histórico da Guerra do Vietnã"
+                             onerror="this.src='https://placehold.co/800x450/1e293b/f8fafc?text=Foto+Historica+Guerra+do+Vietna+(1972)'"
+                             class="w-full max-h-72 object-cover mx-auto">
+                        <span class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded">
+                            Arquivo Jornalístico (1972)
+                        </span>
+                    </div>
+                `,
+                afterHtml: `
+                    <div class="bg-rose-50 dark:bg-rose-950/50 border-2 border-dashed border-rose-300 dark:border-rose-800 rounded-xl p-5 text-center space-y-2">
+                        <div class="text-3xl">🗑️</div>
+                        <h4 class="font-extrabold text-rose-900 dark:text-rose-200 text-sm">Publicação Excluída por Violação de Diretrizes</h4>
+                        <p class="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+                            Nossos sistemas automatizados detectaram nudez infantil e removeram esta imagem permanentemente. Conteúdos que violam padrões de segurança de menores não são permitidos, independentemente do contexto.
+                        </p>
+                    </div>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "Com bilhões de posts por dia, a IA precisa agir preventivamente (obrigação de cuidado) para impedir que imagens de nudez infantil circulem viralmente antes da revisão humana." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "Como aponta Poletto & Morais (2022), a IA não compreende nuance histórica. Apagar um prêmio Pulitzer sem contraditório é censura privada que empobrece a memória pública." }
+                ],
+                metricsBefore: { likes: "❤️ 18.420", comments: "💬 2.310", reach: "👁️ 100% (Público)" },
+                metricsAfter: { likes: "❤️ 0", comments: "💬 Bloqueado", reach: "👁️ 0% (Removido)" }
+            },
+            {
+                id: 1,
+                shortName: "2. Edição",
+                fullName: "2. Edição (Editing)",
+                theory: "Alteração da essência da postagem (p. 111): o moderador rejeita a expressão original do autor e a substitui pela sua própria versão.",
+                author: "@voz_estudantil16",
+                badge: "Adolescente (16 anos)",
+                meta: "Desabafo Pessoal • Ambiente Escolar",
+                prompt: "Para evitar gatilhos em outros jovens, a plataforma editou automaticamente o texto de uma aluna que denunciava bullying e automutilação, suavizando a crítica feita à escola. Isso é proteção ou manipulação?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        "Estou no limite com o bullying nesta escola. Já tive crises de ansiedade e pensamentos de <span class="bg-amber-200 dark:bg-amber-800/70 px-1 rounded font-bold">automutilação</span>, e a coordenação ignora nossas denúncias!"
+                    </p>
+                `,
+                afterHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        "Estou enfrentando <span class="bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">[momentos difíceis]</span> na escola. Se precisar conversar, ligue 188 (CVV)."
+                    </p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 italic">* Texto reescrito pelo filtro automático de bem-estar juvenil (a crítica à escola foi suprimida).</p>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "Os Padrões da Comunidade proíbem menções explícitas à automutilação para evitar efeito contágio entre adolescentes vulneráveis, mantendo o contato de ajuda (CVV)." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "Na técnica de Edição (Grimmelmann), a rede reescreve a fala do autor sem consentimento e apaga uma denúncia legítima de omissão escolar." }
+                ],
+                metricsBefore: { likes: "❤️ 640", comments: "💬 112", reach: "👁️ 100%" },
+                metricsAfter: { likes: "❤️ 310", comments: "💬 29", reach: "👁️ 75% (Editado)" }
+            },
+            {
+                id: 2,
+                shortName: "3. Anotação",
+                fullName: "3. Anotação (Annotation)",
+                theory: "Adição de alertas ou comentários sem remover o post (p. 111 e 122). O artigo aponta a marcação como caminho menos lesivo à liberdade de expressão.",
+                author: "@juventude_em_rede",
+                badge: "Coletivo Jovem",
+                meta: "Debate sobre Direitos Digitais",
+                prompt: "Um jovem critica leis de monitoramento parental obrigatório. A plataforma mantém o post no ar, mas fixa um selo de 'Conteúdo Potencialmente Nocivo a Menores'. A anotação informa ou estigmatiza?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        "Vigiar cada clique dos adolescentes sob o argumento de proteção impede que jovens em famílias abusivas peçam ajuda ou acessem informações sobre seus direitos!"
+                    </p>
+                `,
+                afterHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        "Vigiar cada clique dos adolescentes sob o argumento de proteção impede que jovens em famílias abusivas peçam ajuda ou acessem informações sobre seus direitos!"
+                    </p>
+                    <div class="mt-3 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-xl p-3 flex items-start gap-2.5">
+                        <span class="text-lg">⚠️</span>
+                        <div class="text-xs text-amber-950 dark:text-amber-200">
+                            <strong>Rótulo de Segurança:</strong> Esta publicação contesta ferramentas de proteção infantil e pode representar risco para menores de 18 anos.
+                        </div>
+                    </div>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "É o modelo ideal de obrigação de meio defendido no próprio artigo: não apaga o post, preserva o debate público e apenas alerta os leitores." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "Rotular uma opinião política legítima como 'risco para menores' descredibiliza o autor perante o público sem decisão judicial." }
+                ],
+                metricsBefore: { likes: "❤️ 2.150", comments: "💬 540", reach: "👁️ 100%" },
+                metricsAfter: { likes: "❤️ 2.090", comments: "💬 590", reach: "👁️ 95% (Rotulado)" }
+            },
+            {
+                id: 3,
+                shortName: "4. Síntese",
+                fullName: "4. Síntese (Synthesis)",
+                theory: "Condensação de várias postagens em um texto único padronizado (como Wikipédia ou Notas da Comunidade, citado na p. 111).",
+                author: "@desafios_virais_br",
+                badge: "Criador Teen",
+                meta: "Tendência Viral • Entretenimento",
+                prompt: "Vários adolescentes postam vídeos sobre um desafio viral. A plataforma substitui as legendas individuais por um 'Resumo Oficial Médico' único. A síntese protege os jovens ou apaga a voz individual?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        "Testando o desafio das 36 horas acordado jogando com a galera! Quem aguenta mais tempo sem dormir? 🔥🎮 #ViradaGamer"
+                    </p>
+                `,
+                afterHtml: `
+                    <div class="bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 space-y-1.5">
+                        <span class="text-[11px] font-extrabold text-indigo-900 dark:text-indigo-300 uppercase block">📑 Síntese Consolidada da Plataforma:</span>
+                        <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                            As postagens deste tópico foram sintetizadas: <em>"Segundo a Sociedade Brasileira de Pediatria, a privação prolongada de sono em adolescentes provoca danos cognitivos e cardiovasculares."</em>
+                        </p>
+                    </div>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "Desafios virais causam danos reais à saúde de menores. Sintetizar o tópico com informação científica neutraliza o efeito manada." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "A síntese forçada uniformiza o discurso e elimina a liberdade individual de expressão (art. 5º CF e Marco Civil) sob tutela privada." }
+                ],
+                metricsBefore: { likes: "❤️ 15.800", comments: "💬 2.100", reach: "👁️ Viral" },
+                metricsAfter: { likes: "❤️ 920", comments: "💬 Desativado", reach: "👁️ Centralizado" }
+            },
+            {
+                id: 4,
+                shortName: "5. Filtragem",
+                fullName: "5. Filtragem (Filtering / Shadowban)",
+                theory: "Rebaixamento algorítmico no feed (p. 111). Não apaga o post, mas reduz sua entrega a quase zero — produzindo o mesmo efeito prático da exclusão, sem transparência.",
+                author: "@gremio_livre",
+                badge: "Movimento Estudantil",
+                meta: "Mobilização Juvenil",
+                prompt: "Sem apagar o post e sem avisar o perfil (violando o princípio 'Notice' de Santa Clara), o algoritmo corta 99% do alcance de uma convocação estudantil alegando 'prevenir aglomeração de menores'. Isso é censura invisível?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        📢 <strong>Atenção Estudantes:</strong> Assembleia geral amanhã às 14h na praça central para cobrar passe livre estudantil e reforma das bibliotecas!
+                    </p>
+                `,
+                afterHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed opacity-60">
+                        📢 <strong>Atenção Estudantes:</strong> Assembleia geral amanhã às 14h na praça central para cobrar passe livre estudantil e reforma das bibliotecas!
+                    </p>
+                    <div class="mt-2 text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg font-medium">
+                        📉 <strong>Filtro Algorítmico Silencioso:</strong> Alcance reduzido em 99% para menores de 18 anos. O autor não foi notificado.
+                    </div>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "A rede privada não é obrigada a impulsionar gratuitamente convocações físicas que podem expor menores a riscos urbanos." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "É o pior tipo de censura (shadowban): viola os Princípios de Santa Clara (Notice e Appeal) e a LGPD, pois o usuário sequer sabe que foi punido." }
+                ],
+                metricsBefore: { likes: "❤️ 4.200", comments: "💬 630", reach: "👁️ 52.000 contas" },
+                metricsAfter: { likes: "❤️ 14", comments: "💬 1", reach: "👁️ 210 contas (1%)" }
+            },
+            {
+                id: 5,
+                shortName: "6. Formatação",
+                fullName: "6. Formatação (Formatting)",
+                theory: "Alteração visual na exibição do conteúdo (p. 111), como telas de aviso, desfoque (blur) e barreira de idade (+18).",
+                author: "@observatorio_educacao",
+                badge: "Jornalismo Verificado",
+                meta: "Reportagem Especial",
+                prompt: "Uma reportagem denuncia casos de extorsão digital contra alunos do ensino médio. A rede aplica desfoque e exige confirmação de +18 anos. Essa barreira protege os menores ou os impede de conhecer os riscos que sofrem?",
+                beforeHtml: `
+                    <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+                        📰 <strong>Alerta nas Escolas:</strong> Investigação revela como quadrilhas digitais abordam adolescentes em jogos online para praticar extorsão. Saiba como se proteger.
+                    </p>
+                `,
+                afterHtml: `
+                    <div class="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 p-4 bg-slate-100 dark:bg-slate-800">
+                        <p class="text-slate-800 dark:text-slate-200 text-sm leading-relaxed blur-content" id="blur-demo-text">
+                            📰 <strong>Alerta nas Escolas:</strong> Investigação revela como quadrilhas digitais abordam adolescentes em jogos online para praticar extorsão. Saiba como se proteger.
+                        </p>
+                        <div id="blur-overlay" class="absolute inset-0 bg-slate-900/85 flex flex-col items-center justify-center p-4 text-center text-white">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300 mb-1">👁️ Conteúdo Restrito (+18)</span>
+                            <p class="text-xs text-slate-200 mb-2">Ocultado por padrão para proteção de menores.</p>
+                            <button onclick="window.revealBlur()" class="bg-white text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-200 transition">
+                                Confirmar Maioridade e Ver
+                            </button>
+                        </div>
+                    </div>
+                `,
+                comments: [
+                    { side: "mod", author: "Defesa da Plataforma (Moderador)", text: "A formatação com tela de aviso cumpre o dever de cuidado para menores sem apagar a reportagem para o público adulto." },
+                    { side: "user", author: "Acusação / Direitos (Usuário)", text: "Bloquear informação educativa sobre crimes digitais justamente para as vítimas principais (menores) reduz a prevenção." }
+                ],
+                metricsBefore: { likes: "❤️ 5.100", comments: "💬 910", reach: "👁️ Livre" },
+                metricsAfter: { likes: "❤️ 1.120", comments: "💬 230", reach: "👁️ Bloqueado p/ Menores" }
+            }
+        ];
+
+        // =========================================================================
+        // ESTADO GLOBAL SINCRONIZADO
+        // =========================================================================
+        let state = {
+            currentRound: 0,
+            isModeratedView: true,
+            votingOpen: true,
+            students: JSON.parse(JSON.stringify(INITIAL_STUDENTS)),
+            roundSpeakers: {
+                mod: ["Henrique Barreto Pereira", "Gilbert Carmo Macedo"],
+                user: ["Erick Batista dos Santos", "Henrique Cerqueira Fadigas"]
+            },
+            votesByRound: [{}, {}, {}, {}, {}, {}],
+            // Chats separados por bancada (mod vs user)
+            groupChats: {
+                mod: [
+                    { sender: "Sistema", text: "Bem-vindos à Sala Privada dos Moderadores! Usem este espaço para sugerir argumentos aos colegas que vão falar.", time: "Início" }
+                ],
+                user: [
+                    { sender: "Sistema", text: "Bem-vindos à Sala Privada dos Usuários! Usem este espaço para combinar argumentos e ajudar seus porta-vozes.", time: "Início" }
+                ]
+            }
+        };
+
+        let currentAppMode = 'student';
+        let isPresenterAuthorized = false;
+        let logoTapCount = 0;
+        let studentSubTab = 'feed';
+        let myStudentId = '';
+        let openCommentsSet = new Set([0]); // Mantém comentários do post atual abertos por padrão
+        let timerSeconds = 90;
+        let timerInterval = null;
+
+        // =========================================================================
+        // CONTROLE DE ACESSO (ALUNOS SÓ VEEM A TELA DE ALUNO)
+        // =========================================================================
+        function checkPresenterAuthorization() {
+            const params = new URLSearchParams(window.location.search);
+            const adminParam = params.get('admin');
+            if (adminParam === 'yohanan-israel' || adminParam === '1' || adminParam === 'true') {
+                isPresenterAuthorized = true;
+            }
+            const switcher = document.getElementById('admin-mode-switcher');
+            if (isPresenterAuthorized) {
+                switcher.classList.remove('hidden');
+                switcher.classList.add('flex');
+            } else {
+                switcher.classList.add('hidden');
+                switcher.classList.remove('flex');
+            }
+        }
+
+        window.handleSecretLogoTap = function() {
+            if (isPresenterAuthorized) return;
+            logoTapCount++;
+            if (logoTapCount >= 5) {
+                logoTapCount = 0;
+                document.getElementById('admin-pin-error').classList.add('hidden');
+                document.getElementById('admin-pin-input').value = '';
+                document.getElementById('admin-unlock-modal').classList.remove('hidden');
+            }
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('admin-unlock-modal').classList.add('hidden');
+        };
+
+        window.verifyAdminPin = function() {
+            const val = document.getElementById('admin-pin-input').value.trim().toLowerCase();
+            if (val === 'debate2026' || val === 'yohanan' || val === 'israel') {
+                isPresenterAuthorized = true;
+                closeAdminModal();
+                checkPresenterAuthorization();
+                setAppMode('orchestrator');
+            } else {
+                document.getElementById('admin-pin-error').classList.remove('hidden');
+            }
+        };
+
+        window.copyStudentShareLink = function() {
+            const cleanUrl = window.location.origin + window.location.pathname;
+            const tempInput = document.createElement('input');
+            tempInput.value = cleanUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const btn = document.getElementById('btn-copy-student-link');
+            const originalText = btn.textContent;
+            btn.textContent = "✅ Link Copiado!";
+            setTimeout(() => { btn.textContent = originalText; }, 2500);
+        };
+
+        // =========================================================================
+        // MODO NOTURNO (DARK MODE)
+        // =========================================================================
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            const btn = document.getElementById('btn-dark-mode');
+            btn.textContent = isDark ? '☀️ Claro' : '🌙 Escuro';
+        };
+
+        // =========================================================================
+        // MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL (DOCKER / WEBSOCKET & VERCEL / HTTP)
+        // =========================================================================
+        let socket = null;
+        let isSyncingHttp = false;
+        let httpPollTimer = null;
+
+        function applyIncomingState(remoteData) {
+            if (!remoteData) return;
+            const normalizedStudents = (remoteData.students || INITIAL_STUDENTS).map(s => ({
+                ...s,
+                points: typeof s.points === 'number' ? s.points : (s.candies || 0)
+            }));
+            state = {
+                ...state,
+                ...remoteData,
+                students: normalizedStudents,
+                votesByRound: remoteData.votesByRound || [{}, {}, {}, {}, {}, {}],
+                groupChats: remoteData.groupChats || state.groupChats
+            };
+            openCommentsSet.add(state.currentRound);
+            renderAllViews();
+        }
+
+        async function initRealtimeSync() {
+            // Se estiver rodando via arquivo local file://, mantém modo local
+            if (window.location.protocol === 'file:') {
+                updateConnectionBadge('offline');
+                return;
+            }
+
+            // 1. Tenta WebSocket primeiro (ideal para Docker / Rede Local do Debate)
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = () => {
+                    console.log('[Sync] Conectado via WebSocket em tempo real!');
+                    updateConnectionBadge('ws');
+                    if (httpPollTimer) {
+                        clearInterval(httpPollTimer);
+                        httpPollTimer = null;
+                    }
+                };
+
+                socket.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'sync_state' && msg.state) {
+                            applyIncomingState(msg.state);
+                        }
+                    } catch (e) {
+                        console.error('[Sync] Erro ao processar mensagem do servidor:', e);
+                    }
+                };
+
+                socket.onclose = () => {
+                    console.log('[Sync] WebSocket desconectado. Ativando sincronização HTTP...');
+                    startHttpPolling();
+                };
+
+                socket.onerror = () => {
+                    // Fallback para HTTP (necessário em Vercel Serverless)
+                    startHttpPolling();
+                };
+            } catch (err) {
+                startHttpPolling();
+            }
+        }
+
+        function startHttpPolling() {
+            if (httpPollTimer) return;
+            fetchStateViaHttp();
+            // Polling suave a cada 1.2 segundos para atualização em tempo real no Vercel
+            httpPollTimer = setInterval(fetchStateViaHttp, 1200);
+        }
+
+        async function fetchStateViaHttp() {
+            if (isSyncingHttp) return;
+            try {
+                const res = await fetch('/api/state');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.state) {
+                        applyIncomingState(data.state);
+                        updateConnectionBadge('http');
+                    }
+                } else {
+                    updateConnectionBadge('offline');
+                }
+            } catch (e) {
+                updateConnectionBadge('offline');
+            }
+        }
+
+        async function pushStateToCloud() {
+            renderAllViews();
+
+            // 1. Envio instantâneo via WebSocket (Docker local)
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'sync_state', state }));
+                return;
+            }
+
+            // 2. Envio via HTTP POST (Vercel ou fallback)
+            if (window.location.protocol === 'file:') return;
+
+            isSyncingHttp = true;
+            try {
+                await fetch('/api/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state })
+                });
+            } catch (e) {
+                console.warn('[Sync] Falha ao enviar estado via HTTP:', e);
+            } finally {
+                isSyncingHttp = false;
+            }
+        }
+
+        function updateConnectionBadge(mode) {
+            const badge = document.getElementById('connection-badge');
+            if (!badge) return;
+            if (mode === 'ws') {
+                badge.textContent = "● Ao Vivo (Local)";
+                badge.className = "text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full";
+            } else if (mode === 'http') {
+                badge.textContent = "● Ao Vivo (Vercel)";
+                badge.className = "text-[11px] font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2.5 py-0.5 rounded-full";
+            } else {
+                badge.textContent = "● Modo Local";
+                badge.className = "text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full";
+            }
+        }
+
+        // =========================================================================
+        // NAVEGAÇÃO ENTRE MODOS E SUB-ABAS
+        // =========================================================================
+        window.setAppMode = function(mode) {
+            if ((mode === 'presentation' || mode === 'orchestrator') && !isPresenterAuthorized) {
+                mode = 'student';
+            }
+            currentAppMode = mode;
+            ['student', 'presentation', 'orchestrator'].forEach(m => {
+                document.getElementById(`view-${m}`).classList.add('hidden');
+                const btn = document.getElementById(`mode-btn-${m}`);
+                btn.classList.remove('bg-indigo-600', 'bg-amber-500', 'text-white', 'text-slate-950');
+                btn.classList.add(m === 'orchestrator' ? 'text-amber-300' : 'text-slate-300');
+            });
+
+            document.getElementById(`view-${mode}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`mode-btn-${mode}`);
+            activeBtn.classList.remove('text-slate-300', 'text-amber-300');
+            if (mode === 'orchestrator') {
+                activeBtn.classList.add('bg-amber-500', 'text-slate-950');
+            } else {
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+            renderAllViews();
+        };
+
+        window.givePoints = function(studentId, delta) {
+            const st = state.students.find(s => s.id === studentId);
+            if (st) {
+                st.points = Math.max(0, (st.points || 0) + delta);
+                pushStateToCloud();
+            }
+        };
+
+        window.clearStudentSearch = function() {
+            const input = document.getElementById('orch-student-search');
+            if (input) input.value = '';
+            renderOrchestratorStudentsList();
+        };
+
+        window.setStudentSubTab = function(tab) {
+            studentSubTab = tab;
+            const feedBox = document.getElementById('student-subtab-feed');
+            const chatBox = document.getElementById('student-subtab-chat');
+            const btnFeed = document.getElementById('subtab-btn-feed');
+            const btnChat = document.getElementById('subtab-btn-chat');
+
+            if (tab === 'feed') {
+                feedBox.classList.remove('hidden');
+                chatBox.classList.add('hidden');
+                btnFeed.className = "py-2.5 px-3 rounded-xl text-xs font-extrabold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-xs transition";
+                btnChat.className = "py-2.5 px-3 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5";
+            } else {
+                feedBox.classList.add('hidden');
+                chatBox.classList.remove('hidden');
+                btnChat.className = "py-2.5 px-3 rounded-xl text-xs font-extrabold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-xs transition flex items-center justify-center gap-1.5";
+                btnFeed.className = "py-2.5 px-3 rounded-xl text-xs font-extrabold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+                renderGroupChat();
+            }
+        };
+
+        // =========================================================================
+        // AÇÕES DO ORQUESTRADOR (YOHANAN & ISRAEL)
+        // =========================================================================
+        window.selectRound = function(idx) {
+            state.currentRound = idx;
+            state.isModeratedView = true;
+            state.votingOpen = true;
+            openCommentsSet.add(idx);
+            pushStateToCloud();
+        };
+
+        window.toggleModerationState = function() {
+            state.isModeratedView = !state.isModeratedView;
+            pushStateToCloud();
+        };
+
+        window.toggleVotingOpen = function() {
+            state.votingOpen = !state.votingOpen;
+            pushStateToCloud();
+        };
+
+        window.clearCurrentRoundVotes = function() {
+            state.votesByRound[state.currentRound] = {};
+            pushStateToCloud();
+        };
+
+        window.shuffleAllTeams = function() {
+            const copy = [...state.students];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            copy.forEach((st, idx) => {
+                st.team = idx < 12 ? 'mod' : 'user';
+            });
+            state.students = copy.sort((a, b) => a.id.localeCompare(b.id));
+            window.drawRoundSpeakers();
+        };
+
+        window.drawRoundSpeakers = function() {
+            const mods = state.students.filter(s => s.team === 'mod');
+            const users = state.students.filter(s => s.team === 'user');
+            const pickTwo = (arr) => [...arr].sort(() => 0.5 - Math.random()).slice(0, 2).map(s => s.name);
+
+            state.roundSpeakers = {
+                mod: pickTwo(mods),
+                user: pickTwo(users)
+            };
+            pushStateToCloud();
+        };
+
+        window.swapStudentRole = function(studentId) {
+            const st = state.students.find(s => s.id === studentId);
+            if (st) {
+                st.team = st.team === 'mod' ? 'user' : 'mod';
+                pushStateToCloud();
+            }
+        };
+
+        // =========================================================================
+        // AÇÕES DO ALUNO NO CELULAR (IDENTIDADE, VOTO NO POST E CHAT DA BANCADA)
+        // =========================================================================
+        window.selectStudentIdentity = function(studentId) {
+            myStudentId = studentId;
+            renderStudentView();
+            renderGroupChat();
+        };
+
+        window.togglePostComments = function(roundIdx) {
+            if (openCommentsSet.has(roundIdx)) {
+                openCommentsSet.delete(roundIdx);
+            } else {
+                openCommentsSet.add(roundIdx);
+            }
+            renderStudentTimeline();
+        };
+
+        window.castPostVote = function(roundIdx, choice) {
+            if (!myStudentId) {
+                const sel = document.getElementById('student-identity-select');
+                sel.focus();
+                sel.classList.add('ring-2', 'ring-rose-500');
+                const warn = document.getElementById(`post-vote-warn-${roundIdx}`);
+                if (warn) warn.classList.remove('hidden');
+                return;
+            }
+            // Permite votar na rodada atual enquanto a urna estiver aberta (ou nas anteriores para quem chegou depois)
+            if (roundIdx === state.currentRound && !state.votingOpen) return;
+
+            state.votesByRound[roundIdx][myStudentId] = choice;
+            pushStateToCloud();
+        };
+
+        window.handleSendGroupChat = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input-text');
+            const text = input.value.trim();
+            if (!text || !myStudentId) return;
+            input.value = '';
+            sendChatMessage(text);
+        };
+
+        window.sendQuickChatHelp = function(text) {
+            if (!myStudentId) return;
+            sendChatMessage(text);
+        };
+
+        function sendChatMessage(text) {
+            const st = state.students.find(s => s.id === myStudentId);
+            if (!st) return;
+            const team = st.team; // 'mod' ou 'user'
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            if (!state.groupChats[team]) state.groupChats[team] = [];
+            state.groupChats[team].push({
+                sender: st.name.split(' ').slice(0, 2).join(' '),
+                senderId: st.id,
+                text,
+                time: timeStr
+            });
+            // Mantém últimas 40 mensagens para leveza
+            if (state.groupChats[team].length > 40) {
+                state.groupChats[team] = state.groupChats[team].slice(-40);
+            }
+            pushStateToCloud();
+        }
+
+        window.revealBlur = function() {
+            document.querySelectorAll('#blur-demo-text').forEach(el => el.classList.add('revealed'));
+            document.querySelectorAll('#blur-overlay').forEach(el => el.classList.add('hidden'));
+        };
+
+        // =========================================================================
+        // RENDERIZAÇÃO DAS 3 TELAS
+        // =========================================================================
+        function getRoundVoteCounts(roundIdx) {
+            const map = state.votesByRound[roundIdx] || {};
+            let legit = 0;
+            let censorship = 0;
+            Object.values(map).forEach(v => {
+                if (v === 'legit') legit++;
+                if (v === 'censorship') censorship++;
+            });
+            return { legit, censorship, total: legit + censorship };
+        }
+
+        function renderAllViews() {
+            populateStudentDropdown();
+            renderStudentView();
+            renderPresentationView();
+            renderOrchestratorView();
+        }
+
+        function populateStudentDropdown() {
+            const select = document.getElementById('student-identity-select');
+            const currentVal = myStudentId;
+            select.innerHTML = `<option value="">-- Selecione seu nome na lista (23 alunos) --</option>` +
+                state.students.map(s => `<option value="${s.id}" ${s.id === currentVal ? 'selected' : ''}>${s.name}</option>`).join('');
+        }
+
+        function renderStudentView() {
+            const st = state.students.find(s => s.id === myStudentId);
+
+            // Papel e Pontos do Aluno Selecionado
+            const roleBanner = document.getElementById('student-role-banner');
+            const pointsBadge = document.getElementById('student-points-badge');
+
+            if (st) {
+                const pts = st.points || 0;
+                roleBanner.classList.remove('hidden');
+                pointsBadge.classList.remove('hidden');
+                pointsBadge.textContent = `⭐ ${pts} ${pts === 1 ? 'Ponto' : 'Pontos'}`;
+
+                if (st.team === 'mod') {
+                    roleBanner.className = "mt-3 rounded-xl p-3 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-950 dark:text-blue-200 text-xs";
+                    roleBanner.innerHTML = `<strong>🛡️ Seu Papel: BANCADA MODERADOR</strong><br>Você defende a plataforma, os termos de uso e a prevenção ágil de riscos. Os comentários de apoio abaixo são exclusivos do seu grupo.`;
+                } else {
+                    roleBanner.className = "mt-3 rounded-xl p-3 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/50 text-purple-950 dark:text-purple-200 text-xs";
+                    roleBanner.innerHTML = `<strong>👤 Seu Papel: BANCADA USUÁRIO</strong><br>Você defende a proteção dos menores sem censura privada arbitrária. Os comentários de apoio abaixo são exclusivos do seu grupo.`;
+                }
+            } else {
+                roleBanner.classList.add('hidden');
+                pointsBadge.classList.add('hidden');
+            }
+
+            document.getElementById('feed-count-badge').textContent = state.currentRound + 1;
+
+            renderStudentTimeline();
+            renderGroupChat();
+
+            // Mural de Pontos
+            const winners = state.students.filter(s => (s.points || 0) > 0).sort((a, b) => b.points - a.points);
+            const board = document.getElementById('stu-points-leaderboard');
+            if (winners.length === 0) {
+                board.innerHTML = `<span class="text-xs text-slate-500 dark:text-slate-400 italic">Participe defendendo seu lado para ganhar pontos de Yohanan & Israel!</span>`;
+            } else {
+                board.innerHTML = winners.map(w => `
+                    <span class="text-xs font-bold bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-800 text-slate-800 dark:text-slate-100 px-2.5 py-1 rounded-full shadow-2xs">
+                        ${w.name.split(' ')[0]} ${w.name.split(' ')[1] || ''} • ⭐ ${w.points} ${w.points === 1 ? 'pt' : 'pts'}
+                    </span>
+                `).join('');
+            }
+        }
+
+        // Renderiza todos os posts de 0 até currentRound (do mais novo para o mais antigo, como um feed real)
+        function renderStudentTimeline() {
+            const container = document.getElementById('stu-timeline-container');
+            const currentStudent = state.students.find(s => s.id === myStudentId);
+            const visibleRounds = [];
+            for (let i = state.currentRound; i >= 0; i--) {
+                visibleRounds.push(ROUNDS_DATA[i]);
+            }
+
+            container.innerHTML = visibleRounds.map(r => {
+                const isLatest = r.id === state.currentRound;
+                const showModerated = isLatest ? state.isModeratedView : true;
+                const counts = getRoundVoteCounts(r.id);
+                const myVote = myStudentId ? (state.votesByRound[r.id] || {})[myStudentId] : null;
+                const isLocked = isLatest && !state.votingOpen;
+                const commentsOpen = openCommentsSet.has(r.id);
+
+                // Filtra comentários exclusivos para o grupo do aluno logado
+                const groupComments = currentStudent
+                    ? r.comments.filter(c => c.side === currentStudent.team)
+                    : [];
+
+                return `
+                    <article class="bg-white dark:bg-slate-900 rounded-2xl shadow-md border ${isLatest ? 'border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-500/15' : 'border-slate-200 dark:border-slate-800'} overflow-hidden transition">
+                        <!-- Cabeçalho da Técnica / Rodada -->
+                        <div class="${isLatest ? 'bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200'} px-4 py-2.5 flex items-center justify-between border-b border-slate-200/20">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md ${isLatest ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
+                                    ${isLatest ? '● AO VIVO • RODADA ' + (r.id + 1) : 'RODADA ' + (r.id + 1)}
+                                </span>
+                                <h2 class="font-bold text-sm">${r.fullName}</h2>
+                            </div>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                showModerated
+                                    ? 'bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30'
+                                    : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                            }">
+                                ${showModerated ? '🛡️ Moderado' : '🌐 Original'}
+                            </span>
+                        </div>
+
+                        <!-- Corpo do Post na Rede Social -->
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-bold flex items-center justify-center text-base shrink-0">
+                                    ${r.author.replace('@', '')[0].toUpperCase()}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="font-bold text-sm text-slate-900 dark:text-white">${r.author}</span>
+                                        <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-semibold">${r.badge}</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 truncate">${r.meta}</p>
+                                </div>
+                            </div>
+
+                            <!-- Conteúdo (Antes ou Depois) -->
+                            <div class="text-sm">
+                                ${showModerated ? r.afterHtml : r.beforeHtml}
+                            </div>
+
+                            <!-- Pergunta do Debate -->
+                            <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 block mb-0.5">🔥 Questão em Debate:</span>
+                                <p class="text-xs font-medium text-amber-950 dark:text-amber-100 leading-relaxed">${r.prompt}</p>
+                            </div>
+
+                            <!-- Barra Social: Like / Deslike / Comentários -->
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <!-- Legenda Clara dos Ícones Like / Deslike -->
+                                <div class="flex flex-wrap items-center justify-between gap-1 bg-slate-50 dark:bg-slate-800/70 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                    <span><strong>Legenda:</strong> 👍 = Proteção Legítima</span>
+                                    <span>👎 = Censura Indevida</span>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <!-- Botão Like (Proteção Legítima) -->
+                                    <button onclick="castPostVote(${r.id}, 'legit')" ${isLocked ? 'disabled' : ''} class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                                        myVote === 'legit'
+                                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-400'
+                                    } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}" title="Like = Proteção Legítima">
+                                        <span class="text-base leading-none">👍</span>
+                                        <span>${counts.legit}</span>
+                                    </button>
+
+                                    <!-- Botão Deslike (Censura Indevida) -->
+                                    <button onclick="castPostVote(${r.id}, 'censorship')" ${isLocked ? 'disabled' : ''} class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                                        myVote === 'censorship'
+                                            ? 'bg-rose-600 border-rose-600 text-white shadow-sm'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-rose-400'
+                                    } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}" title="Deslike = Censura Indevida">
+                                        <span class="text-base leading-none">👎</span>
+                                        <span>${counts.censorship}</span>
+                                    </button>
+
+                                    <!-- Botão Comentários do Grupo -->
+                                    <button onclick="togglePostComments(${r.id})" class="flex-1 py-2 px-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-1.5 transition ${
+                                        commentsOpen
+                                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
+                                    }">
+                                        <span>💬</span>
+                                        <span>${currentStudent ? groupComments.length : '🔒'}</span>
+                                    </button>
+                                </div>
+
+                                <p id="post-vote-warn-${r.id}" class="hidden text-center text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                                    ⚠️ Escolha seu nome no topo da página antes de dar Like ou Deslike!
+                                </p>
+                                ${isLocked ? `<p class="text-center text-[11px] font-semibold text-slate-400">🔒 Votação encerrada pelos apresentadores.</p>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Seção de Comentários Logo Abaixo do Post (Exclusiva do Grupo do Aluno) -->
+                        ${commentsOpen ? `
+                            <div class="bg-slate-50 dark:bg-slate-950/80 border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-2">
+                                ${!currentStudent ? `
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 italic text-center py-1">
+                                        🔒 Selecione seu nome no topo da página para liberar os comentários de apoio do seu grupo.
+                                    </p>
+                                ` : groupComments.map(c => `
+                                    <div class="flex items-start gap-2.5">
+                                        <div class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-extrabold text-white ${
+                                            c.side === 'mod' ? 'bg-blue-600' : 'bg-purple-600'
+                                        }">
+                                            ${c.side === 'mod' ? '🛡️' : '👤'}
+                                        </div>
+                                        <div class="flex-1 rounded-2xl rounded-tl-none px-3 py-2 text-xs border ${
+                                            c.side === 'mod'
+                                                ? 'bg-blue-50/90 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/70 text-blue-950 dark:text-blue-100'
+                                                : 'bg-purple-50/90 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/70 text-purple-950 dark:text-purple-100'
+                                        }">
+                                            <div class="flex items-center justify-between gap-2 mb-0.5">
+                                                <span class="font-extrabold text-[11px]">${c.author}</span>
+                                                <span class="text-[9px] font-bold uppercase opacity-70">Só seu grupo vê</span>
+                                            </div>
+                                            <p class="leading-relaxed">${c.text}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </article>
+                `;
+            }).join('');
+        }
+
+        // Renderiza o Chat Privado exclusivo do grupo do aluno (Moderador ou Usuário)
+        function renderGroupChat() {
+            const st = state.students.find(s => s.id === myStudentId);
+            const lockedNotice = document.getElementById('chat-locked-notice');
+            const roomBox = document.getElementById('chat-room-box');
+            const unreadBadge = document.getElementById('chat-unread-badge');
+
+            if (!st) {
+                lockedNotice.classList.remove('hidden');
+                roomBox.classList.add('hidden');
+                unreadBadge.textContent = "🔒";
+                return;
+            }
+
+            lockedNotice.classList.add('hidden');
+            roomBox.classList.remove('hidden');
+
+            const isMod = st.team === 'mod';
+            const msgs = (state.groupChats && state.groupChats[st.team]) ? state.groupChats[st.team] : [];
+            unreadBadge.textContent = msgs.length;
+
+            const header = document.getElementById('chat-room-header');
+            const title = document.getElementById('chat-room-title');
+            if (isMod) {
+                header.className = "px-4 py-3 text-white flex items-center justify-between bg-blue-700";
+                title.textContent = "🛡️ Sala Privada: Moderadores";
+            } else {
+                header.className = "px-4 py-3 text-white flex items-center justify-between bg-purple-700";
+                title.textContent = "👤 Sala Privada: Usuários";
+            }
+
+            const list = document.getElementById('chat-messages-list');
+            list.innerHTML = msgs.map(m => {
+                const isMine = m.senderId === myStudentId;
+                return `
+                    <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
+                        <div class="max-w-[85%] rounded-2xl px-3 py-2 text-xs shadow-2xs ${
+                            isMine
+                                ? 'bg-indigo-600 text-white rounded-br-none'
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-none'
+                        }">
+                            <div class="flex items-center justify-between gap-3 mb-0.5">
+                                <span class="font-extrabold text-[10px] ${isMine ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'}">${m.sender}</span>
+                                <span class="text-[9px] opacity-70">${m.time || ''}</span>
+                            </div>
+                            <p class="leading-relaxed">${m.text}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function renderPresentationView() {
+            const r = ROUNDS_DATA[state.currentRound];
+
+            document.getElementById('pres-round-pills').innerHTML = ROUNDS_DATA.map((item, idx) => `
+                <div class="px-3 py-2 rounded-xl text-center text-xs font-extrabold border ${
+                    idx === state.currentRound
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow'
+                    : idx < state.currentRound
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                }">
+                    ${item.shortName}
+                </div>
+            `).join('');
+
+            document.getElementById('pres-round-tag').textContent = `TÉCNICA ${state.currentRound + 1} DE 6`;
+            document.getElementById('pres-concept-title').textContent = r.fullName;
+            document.getElementById('pres-theory').textContent = r.theory;
+            document.getElementById('pres-post-avatar').textContent = r.author.replace('@', '')[0].toUpperCase();
+            document.getElementById('pres-post-author').textContent = r.author;
+            document.getElementById('pres-post-badge').textContent = r.badge;
+            document.getElementById('pres-post-meta').textContent = r.meta;
+            document.getElementById('pres-prompt').textContent = r.prompt;
+
+            const statusBadge = document.getElementById('pres-mod-status');
+            if (state.isModeratedView) {
+                document.getElementById('pres-post-body').innerHTML = r.afterHtml;
+                statusBadge.textContent = "🛡️ Moderado pela Plataforma";
+                statusBadge.className = "text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/40";
+                document.getElementById('pres-metric-likes').textContent = r.metricsAfter.likes;
+                document.getElementById('pres-metric-comments').textContent = r.metricsAfter.comments;
+                document.getElementById('pres-metric-reach').textContent = r.metricsAfter.reach;
+            } else {
+                document.getElementById('pres-post-body').innerHTML = r.beforeHtml;
+                statusBadge.textContent = "🌐 Publicação Original";
+                statusBadge.className = "text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40";
+                document.getElementById('pres-metric-likes').textContent = r.metricsBefore.likes;
+                document.getElementById('pres-metric-comments').textContent = r.metricsBefore.comments;
+                document.getElementById('pres-metric-reach').textContent = r.metricsBefore.reach;
+            }
+
+            document.getElementById('pres-mod-speakers').innerHTML = (state.roundSpeakers.mod || []).map(n => `<div>🎙️ ${n}</div>`).join('');
+            document.getElementById('pres-user-speakers').innerHTML = (state.roundSpeakers.user || []).map(n => `<div>🎙️ ${n}</div>`).join('');
+
+            const counts = getRoundVoteCounts(state.currentRound);
+            document.getElementById('pres-vote-total').textContent = `${counts.total} / 23 votos`;
+            document.getElementById('pres-votes-legit').textContent = counts.legit;
+            document.getElementById('pres-votes-cens').textContent = counts.censorship;
+
+            const pctLegit = counts.total === 0 ? 50 : Math.round((counts.legit / counts.total) * 100);
+            const pctCens = counts.total === 0 ? 50 : 100 - pctLegit;
+
+            document.getElementById('pres-pct-legit').textContent = counts.total === 0 ? '0%' : `${pctLegit}%`;
+            document.getElementById('pres-pct-cens').textContent = counts.total === 0 ? '0%' : `${pctCens}%`;
+            document.getElementById('pres-bar-legit').style.width = `${pctLegit}%`;
+            document.getElementById('pres-bar-cens').style.width = `${pctCens}%`;
+        }
+
+        function renderOrchestratorView() {
+            document.getElementById('orch-round-grid').innerHTML = ROUNDS_DATA.map((r, idx) => {
+                const counts = getRoundVoteCounts(idx);
+                const active = idx === state.currentRound;
+                return `
+                    <button onclick="selectRound(${idx})" class="p-3 rounded-xl border text-left transition ${
+                        active
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow'
+                            : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                    }">
+                        <div class="text-xs font-extrabold">${r.shortName}</div>
+                        <div class="text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-slate-500 dark:text-slate-400'}">
+                            ${counts.total} votos
+                        </div>
+                    </button>
+                `;
+            }).join('');
+
+            document.getElementById('orch-mod-label').textContent = state.isModeratedView
+                ? "🛡️ Moderado pela Plataforma (Depois)"
+                : "🌐 Publicação Original do Usuário (Antes)";
+
+            const votingBadge = document.getElementById('orch-voting-badge');
+            const btnVoting = document.getElementById('orch-btn-voting');
+            if (state.votingOpen) {
+                votingBadge.textContent = "Aberta (Recebendo Votos)";
+                votingBadge.className = "text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800";
+                btnVoting.textContent = "🔒 Encerrar Urna";
+            } else {
+                votingBadge.textContent = "Encerrada";
+                votingBadge.className = "text-xs font-extrabold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800";
+                btnVoting.textContent = "🔓 Reabrir Urna";
+            }
+
+            renderOrchestratorStudentsList();
+            renderOrchestratorChats();
+
+            document.getElementById('orch-results-tbody').innerHTML = ROUNDS_DATA.map((r, idx) => {
+                const c = getRoundVoteCounts(idx);
+                let verdict = `<span class="text-slate-400 italic">Aguardando</span>`;
+                if (c.total > 0) {
+                    verdict = c.legit > c.censorship
+                        ? `<span class="font-bold text-emerald-600 dark:text-emerald-400">👍 Proteção</span>`
+                        : c.censorship > c.legit
+                            ? `<span class="font-bold text-rose-600 dark:text-rose-400">👎 Censura</span>`
+                            : `<span class="font-bold text-amber-600 dark:text-amber-400">⚖️ Empate</span>`;
+                }
+                return `
+                    <tr>
+                        <td class="py-2 px-2 font-semibold text-slate-800 dark:text-slate-200">${r.shortName}</td>
+                        <td class="py-2 px-2 font-bold text-emerald-600 dark:text-emerald-400">${c.legit}</td>
+                        <td class="py-2 px-2 font-bold text-rose-600 dark:text-rose-400">${c.censorship}</td>
+                        <td class="py-2 px-2">${verdict}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Renderiza a lista de alunos com campo de busca e sorteados fixados no topo
+        window.renderOrchestratorStudentsList = function() {
+            const searchInput = document.getElementById('orch-student-search');
+            const clearBtn = document.getElementById('orch-clear-search-btn');
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', query.length === 0);
+            }
+
+            const drawnNames = new Set([
+                ...(state.roundSpeakers?.mod || []),
+                ...(state.roundSpeakers?.user || [])
+            ]);
+
+            // Filtra pela busca e ordena colocando os sorteados da rodada no topo
+            const filtered = state.students
+                .filter(st => st.name.toLowerCase().includes(query))
+                .sort((a, b) => {
+                    const aDrawn = drawnNames.has(a.name) ? 1 : 0;
+                    const bDrawn = drawnNames.has(b.name) ? 1 : 0;
+                    if (aDrawn !== bDrawn) return bDrawn - aDrawn;
+                    return a.id.localeCompare(b.id);
+                });
+
+            const listEl = document.getElementById('orch-students-list');
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Nenhum aluno encontrado para "${query}".</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(st => {
+                const isMod = st.team === 'mod';
+                const isDrawn = drawnNames.has(st.name);
+                const pts = st.points || 0;
+
+                return `
+                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border transition ${
+                        isDrawn
+                            ? 'border-amber-400 dark:border-amber-600 bg-amber-50/70 dark:bg-amber-950/30 shadow-2xs'
+                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50'
+                    }">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5">
+                                ${isDrawn ? `<span class="text-[10px] font-extrabold bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded shrink-0">🎙️ SORTEADO</span>` : ''}
+                                <span class="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">${st.name}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <button onclick="swapStudentRole('${st.id}')" class="text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                                    isMod
+                                        ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
+                                        : 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300'
+                                }" title="Clique para inverter papel">
+                                    ${isMod ? '🛡️ Moderador' : '👤 Usuário'} ⇄
+                                </button>
+                                <span class="text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
+                                    ⭐ ${pts} ${pts === 1 ? 'pt' : 'pts'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="givePoints('${st.id}', 1)" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-2xs transition" title="Atribuir +1 ponto pela participação">
+                                +1 Pt
+                            </button>
+                            ${pts > 0 ? `
+                                <button onclick="givePoints('${st.id}', -1)" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 text-xs font-bold px-2 py-1.5 rounded-lg" title="Remover 1 ponto">-</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // Renderiza os dois chats privados no painel do Orquestrador
+        function renderOrchestratorChats() {
+            const modMsgs = state.groupChats?.mod || [];
+            const userMsgs = state.groupChats?.user || [];
+
+            document.getElementById('orch-chat-mod-count').textContent = modMsgs.length;
+            document.getElementById('orch-chat-user-count').textContent = userMsgs.length;
+
+            const renderBubble = (m) => `
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+                    <div class="flex items-center justify-between text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400">
+                        <span>${m.sender}</span>
+                        <span class="text-slate-400 font-normal">${m.time || ''}</span>
+                    </div>
+                    <p class="text-slate-800 dark:text-slate-200 leading-snug mt-0.5">${m.text}</p>
+                </div>
+            `;
+
+            const modList = document.getElementById('orch-chat-mod-list');
+            const userList = document.getElementById('orch-chat-user-list');
+
+            modList.innerHTML = modMsgs.map(renderBubble).join('');
+            userList.innerHTML = userMsgs.map(renderBubble).join('');
+
+            modList.scrollTop = modList.scrollHeight;
+            userList.scrollTop = userList.scrollHeight;
+        }
+
+        // =========================================================================
+        // CRONÔMETRO
+        // =========================================================================
+        function updateTimerDisplays() {
+            const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+            const secs = String(timerSeconds % 60).padStart(2, '0');
+            const text = `${mins}:${secs}`;
+            ['pres-timer-display', 'orch-timer-display'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+        }
+
+        window.setTimer = function(secs) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerSeconds = secs;
+            const btn = document.getElementById('orch-btn-timer');
+            if (btn) btn.textContent = "Iniciar";
+            updateTimerDisplays();
+        };
+
+        window.toggleTimer = function() {
+            const btn = document.getElementById('orch-btn-timer');
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                btn.textContent = "Retomar";
+            } else {
+                if (timerSeconds <= 0) timerSeconds = 90;
+                btn.textContent = "Pausar";
+                timerInterval = setInterval(() => {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplays();
+                    } else {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        btn.textContent = "Fim!";
+                    }
+                }, 1000);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkPresenterAuthorization();
+            if (isPresenterAuthorized) {
+                setAppMode('orchestrator');
+            } else {
+                setAppMode('student');
+            }
+            initRealtimeSync();
+        });
+    </script>
+</body>
+</html>

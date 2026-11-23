@@ -1,9 +1,5 @@
 node_modules
-.next
 .git
 .gitignore
-*.md
-.DS_Store
-.env*.local
-artigos_apoio
-article_text.txt
+artigos_apoio/*.pdf
+data/*.json
