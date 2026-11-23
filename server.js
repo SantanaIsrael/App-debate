@@ -12,9 +12,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname)));
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 
 // Ensure data directory exists
@@ -147,6 +148,17 @@ app.post('/api/reset', (req, res) => {
   persistState();
   broadcast({ type: 'sync_state', state });
   res.json({ success: true, message: 'Estado resetado com sucesso', state });
+});
+
+// Explicit static asset routes (ensures Vercel @vercel/nft bundles them and sets proper Content-Type)
+app.get('/tailwind.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'tailwind.js'));
+});
+
+app.get('/viet.webp', (req, res) => {
+  res.setHeader('Content-Type', 'image/webp');
+  res.sendFile(path.join(__dirname, 'viet.webp'));
 });
 
 // Root handler
